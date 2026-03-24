@@ -1,199 +1,185 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- ИЗМЕНЕНИЕ: Заголовок вкладки -->
-    <title>ФОРМА - расписание</title>
-    
-    <!-- Подключаем Firebase (используем совместимый режим для простоты) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Запись на фитнес</title>
+<style>
+:root{--bg:#f0f2f5;--c:#fff;--t:#333;--t2:#777;--t3:#aaa;--bd:#e0e0e0;--ip:#ddd;--g:#4caf50;--gh:#43a047;--r:#ef5350;--gbg:#e8f5e9;--gcl:#2e7d32;--abg:#fff3e0;--abd:#ffcc80;--acl:#e65100;--sh:0 2px 8px rgba(0,0,0,.08);--mb:#fff}
+[data-theme="dark"]{--bg:#121212;--c:#1e1e1e;--t:#e0e0e0;--t2:#aaa;--t3:#666;--bd:#333;--ip:#444;--g:#66bb6a;--gh:#4caf50;--r:#ef5350;--gbg:#1b3a1b;--gcl:#81c784;--abg:#3e2723;--abd:#5d4037;--acl:#ffab91;--sh:0 2px 8px rgba(0,0,0,.3);--mb:#252525}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--t);min-height:100vh;padding:16px;transition:background .3s,color .3s}
 
-    <style>
-        /* Основные стили */
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Segoe UI',system-ui,sans-serif;background:#111827;color:#e5e7eb;min-height:100vh}
+.top{display:flex;justify-content:space-between;align-items:center;max-width:960px;margin:0 auto 14px;gap:8px;flex-wrap:wrap}
+.hdr{flex:1;text-align:center;user-select:none;min-width:120px}
+.hdr h1{font-size:20px;cursor:default}
+.uinfo{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.uinfo .uname,.uinfo .uphone{background:var(--c);border:1px solid var(--ip);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;box-shadow:var(--sh);color:var(--g);font-weight:500;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uinfo .uname:hover,.uinfo .uphone:hover{background:var(--gbg)}
+.badge{display:none;background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;margin-top:4px}
+.cs{display:inline-block;font-size:10px;padding:2px 7px;border-radius:8px;margin-top:3px;color:#fff}
+.c-ok{background:#4caf50}.c-er{background:#e53935}.c-w{background:#ff9800}
+.tbtn,.ibtn{background:var(--c);border:1px solid var(--ip);border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh);flex-shrink:0;position:relative;transition:transform .15s}
+.tbtn:hover,.ibtn:hover{transform:scale(1.05)}.ibtn{display:none}.ibtn.sh{display:flex}
+.bdot{position:absolute;top:1px;right:1px;width:8px;height:8px;background:#e53935;border-radius:50%;display:none}
 
-        /* ШАПКА */
-        .header{display:flex;align-items:center;padding:12px 16px;background:#1f2937;position:sticky;top:0;z-index:50;gap:15px}
-        
-        /* ИЗМЕНЕНИЕ: Лого без рамок и фона */
-        .logo img{height:40px;border:none!important;background:none!important;display:block}
-        
-        /* ИЗМЕНЕНИЕ: Название на странице */
-        .header h1{flex:1;text-align:center;font-size:1.1em;font-weight:600;color:#fff;margin:0}
+.main{display:flex;gap:16px;max-width:960px;margin:0 auto;align-items:flex-start}
+.lside{flex-shrink:0;width:100px;text-align:center}
+.lside img{width:100px;height:100px;object-fit:contain;border-radius:12px;box-shadow:var(--sh)}
+.lside .ltxt{font-size:11px;color:var(--t3);margin-top:6px}
+.sw{flex:1;min-width:0}.cw{flex-shrink:0;width:264px}
 
-        .bell-wrap{position:relative;cursor:pointer;font-size:1.4em}
-        .bell-badge{position:absolute;top:-5px;right:-5px;background:#ef4444;color:#fff;border-radius:50%;
-                     min-width:18px;height:18px;font-size:11px;display:none;align-items:center;justify-content:center}
-        .bell-badge.show{display:flex}
+.shd{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:var(--c);border-radius:8px;margin-bottom:10px;box-shadow:var(--sh);font-size:12px;gap:6px}
+.shd .ds{font-weight:600;color:var(--g)}.shd .sv{font-weight:600}
+.wb{background:var(--bg);border:1px solid var(--ip);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:16px}
+.wb:hover{background:var(--gbg)}
+.rdd{background:var(--g);color:#fff;border:none;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px}
 
-        /* СЕТКА */
-        .container{display:flex;gap:16px;padding:16px;max-width:1100px;margin:auto}
-        .schedule-col{flex:1;min-width:0}
-        .calendar-col{width:280px;flex-shrink:0}
-        @media(max-width:768px){.container{flex-direction:column-reverse}.calendar-col{width:100%}}
+.dy{background:var(--c);border-radius:10px;padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.dyhd{font-size:14px;font-weight:700;padding-bottom:6px;margin-bottom:8px;border-bottom:2px solid var(--g)}
+.dyhd .d2{font-weight:400;color:var(--t2);font-size:12px}
+.nc{color:var(--t3);font-size:13px;padding:8px 0;text-align:center}
 
-        /* НАВИГАЦИЯ ПО НЕДЕЛЯМ */
-        .week-nav{display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:15px}
-        /* ИЗМЕНЕНИЕ: Зеленые кнопки перемотки */
-        .week-nav button{background:#22c55e;color:#fff;border:none;padding:8px 15px;border-radius:6px;cursor:pointer;font-weight:bold}
-        .week-nav span{font-weight:600;min-width:120px;text-align:center}
+.sl{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bd);gap:6px;flex-wrap:wrap}.sl:last-child{border-bottom:none}
+.sll{flex:1;min-width:140px}.st{font-weight:600;font-size:13px}
+.sn{font-size:11px;color:var(--t3);margin-top:2px;line-height:1.4}
+.slr{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.ct{background:var(--gbg);color:var(--gcl);padding:3px 7px;border-radius:14px;font-size:11px;font-weight:600}
+.b{border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;white-space:nowrap;transition:opacity .15s}.b:hover{opacity:.85}
+.bg{background:var(--g);color:#fff}.br{background:var(--r);color:#fff}
+.bdel{background:none;color:var(--t3);border:none;cursor:pointer;font-size:13px;padding:1px 2px}.bdel:hover{color:var(--r)}
+.bclr{background:var(--r);color:#fff;border:none;cursor:pointer;font-size:10px;padding:2px 5px;border-radius:3px;opacity:.7}.bclr:hover{opacity:1}
 
-        /* КАРТОЧКИ ЗАНЯТИЙ */
-        .day-card{background:#1f2937;border-radius:12px;padding:15px;margin-bottom:15px}
-        .day-title{color:#22c55e;font-weight:bold;margin-bottom:10px;text-transform:capitalize}
-        .class-item{background:#111827;border-radius:10px;padding:12px;margin-bottom:8px}
-        .cls-time{color:#22c55e;font-weight:bold;font-size:1.1em}
-        .cls-name{font-size:1.05em;margin:4px 0;font-weight:500}
-        .cls-trainer{color:#9ca3af;font-size:0.9em}
-        .cls-slots{color:#6b7280;font-size:0.85em;margin:5px 0}
-        
-        /* КНОПКИ */
-        .btn-book{background:#22c55e;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;width:100%;margin-top:5px}
-        /* ИЗМЕНЕНИЕ: Кнопка резерва синяя */
-        .btn-reserve{background:#3b82f6;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;width:100%;margin-top:5px}
-        
-        /* ИЗМЕНЕНИЕ: Вы записаны + Х */
-        .booked-row{display:flex;align-items:center;justify-content:space-between;background:#064e3b;padding:8px;border-radius:6px;margin-top:5px}
-        .booked-text{color:#4ade80;font-weight:bold;font-size:0.9em}
-        .btn-x{background:#ef4444;color:#fff;border:none;width:28px;height:28px;border-radius:4px;cursor:pointer;font-weight:bold}
+.cb{background:var(--c);border-radius:10px;padding:10px;box-shadow:var(--sh);margin-bottom:10px}
+.ch{font-size:12px;font-weight:700;text-align:center;margin-bottom:6px}
+.ctbl{width:100%;border-collapse:collapse;font-size:11px}
+.ctbl th{padding:2px 0;text-align:center;color:var(--t3);font-weight:500;font-size:10px}
+.ctbl td{padding:2px 0;text-align:center}
+.cd{width:26px;height:26px;line-height:26px;border-radius:50%;display:inline-block;cursor:pointer;transition:all .15s}
+.cd.oy{color:var(--t3)}.cd.oy:hover{background:var(--bd)}
+.cd.soy{color:var(--t3);font-weight:700}
+.cd.tday{background:var(--g);color:#fff;font-weight:700}
+.cd.hb{border:2px solid var(--g);color:var(--g);font-weight:600}
+.cd.gh{color:var(--ip);cursor:default}
 
-        /* КАЛЕНДАРЬ */
-        .calendar{background:#1f2937;border-radius:12px;padding:15px}
-        .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-        .cal-head button{background:none;border:none;color:#22c55e;font-size:1.2em;cursor:pointer;padding:0 10px}
-        .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
-        .cal-dn{font-size:0.75em;color:#6b7280;padding-bottom:5px}
-        .cal-d{padding:8px 2px;font-size:0.9em;color:#4b5563;cursor:pointer;border-radius:4px}
-        /* ИЗМЕНЕНИЕ: Белый цвет если есть занятия */
-        .cal-d.has-classes{color:#ffffff;font-weight:bold}
-        /* ИЗМЕНЕНИЕ: Сегодня — желтое подчеркивание */
-        .cal-d.today{color:#eab308;border-bottom:3px solid #eab308;border-radius:0;font-weight:bold}
+.mo{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:center}.mo.sh{display:flex}
+.mx{background:var(--mb);padding:20px;border-radius:12px;width:92%;max-width:320px;max-height:90vh;overflow-y:auto}
+.mx h3{margin-bottom:10px;font-size:15px}
+.mx input{width:100%;padding:9px;border:2px solid var(--ip);border-radius:6px;font-size:13px;outline:none;background:var(--c);color:var(--t);margin-bottom:7px;font-family:inherit}
+.mx input:focus{border-color:var(--g)}
+.mx .bo{width:100%;padding:10px;background:var(--g);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;margin-top:4px}.mx .bo:hover{background:var(--gh)}
 
-        /* МОДАЛЬНЫЕ ОКНА (стиль отмены) */
-        .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;align-items:center;justify-content:center;padding:20px}
-        .overlay.open{display:flex}
-        .modal{background:#1f2937;border:2px solid #ef4444;border-radius:15px;padding:20px;width:100%;max-width:350px;box-shadow:0 0 20px rgba(239,68,68,0.3)}
-        .modal h3{text-align:center;margin-bottom:15px;font-size:1.1em}
-        .modal input, .modal textarea{width:100%;padding:12px;margin-bottom:12px;border-radius:8px;border:1px solid #374151;background:#111827;color:#fff;font-size:1em}
-        .m-btns{display:flex;gap:10px}
-        .m-btns button{flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;font-weight:bold}
-        .m-ok{background:#22c55e;color:#fff}
-        .m-no{background:#ef4444;color:#fff}
+.ap{background:var(--abg);border:1px solid var(--abd);border-radius:10px;padding:12px;margin-top:14px;display:none;max-width:960px;margin-left:auto;margin-right:auto}
+.ap h3{color:var(--acl);margin-bottom:6px;font-size:13px}
+.ar{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.ab{padding:6px 10px;background:var(--g);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px}.ab:hover{opacity:.85}
+.ab.d{background:var(--r)}.ab.w{background:#ff9800;color:#fff}
 
-        /* ПАНЕЛЬ УВЕДОМЛЕНИЙ */
-        .notif-panel{display:none;position:fixed;top:60px;right:16px;width:300px;background:#1f2937;border-radius:12px;padding:15px;z-index:90;box-shadow:0 10px 25px rgba(0,0,0,0.5)}
-        .notif-panel.open{display:block}
-        .notif-item{background:#111827;padding:10px;border-radius:8px;margin-bottom:8px;font-size:0.9em}
+.et{width:100%;border-collapse:collapse;font-size:11px;margin:8px 0}
+.et th{background:var(--abg);padding:5px;text-align:left;color:var(--acl);font-size:10px}
+.et td{padding:4px;border-bottom:1px solid var(--bd)}
+.et input{width:100%;padding:4px;border:1px solid var(--ip);border-radius:3px;font-size:11px;background:var(--c);color:var(--t);font-family:inherit}
+.et input:focus{border-color:var(--g)}
 
-        /* АДМИНКА */
-        .admin-box{display:none;background:#1f2937;margin:16px;padding:16px;border-radius:12px;max-width:1100px;margin:16px auto}
-        .admin-box.open{display:block}
-        .abtn-notify{background:#8b5cf6;color:#fff;padding:10px 20px;border:none;border-radius:8px;cursor:pointer;margin-right:10px}
-    </style>
+.nl{max-height:300px;overflow-y:auto;font-size:12px;color:var(--t2)}
+.ni{padding:8px 0;border-bottom:1px solid var(--bd)}.ni:last-child{border-bottom:none}
+.ni .nm{font-weight:600;color:var(--t)}.ni .nt{font-size:10px;color:var(--t3);margin-top:2px}
+
+@keyframes flashG{0%{background:var(--gbg)}100%{background:transparent}}
+.flash{animation:flashG 1.2s ease-out}
+
+@media(max-width:700px){.main{flex-direction:column;align-items:center}.lside{width:80px}.lside img{width:80px;height:80px}.cw{width:100%;max-width:320px}.sl{flex-direction:column;align-items:flex-start}.slr{align-self:flex-end}.mx{max-width:95%;padding:16px}.uinfo .uname,.uinfo .uphone{max-width:80px;font-size:11px}}
+</style>
 </head>
 <body>
 
-<div class="header">
-    <div class="logo"><img src="logo.png" alt="Logo" onerror="this.style.display='none'"></div>
-    <h1>ФОРМА — расписание</h1>
-    <div class="bell-wrap" onclick="toggleNotifs()">🔔<div id="badge" class="bell-badge">0</div></div>
+<div class="top">
+  <div class="hdr">
+    <h1 onclick="tapA()">Запись на занятия</h1>
+    <div class="badge" id="badge">Администратор</div>
+    <div id="cs" class="cs c-w">...</div>
+  </div>
+  <div class="uinfo" id="uinfo" style="display:none">
+    <span class="uname" onclick="editU()" title="Нажмите для изменения">&#128100; <span id="uNm">-</span></span>
+    <span class="uphone" onclick="editP()" title="Нажмите для изменения">&#128222; <span id="uPh">-</span></span>
+  </div>
+  <button class="ibtn" id="iBtn" onclick="showNM()" title="Уведомления">&#128276;<span class="bdot" id="bdot"></span></button>
+  <button class="tbtn" onclick="togT()" id="tBtn" title="Тема">&#127763;</button>
 </div>
 
-<div class="container">
-    <div class="schedule-col">
-        <div class="week-nav">
-            <button onclick="changeWeek(-1)">❮</button>
-            <span id="weekRange">...</span>
-            <button onclick="changeWeek(1)">❯</button>
-        </div>
-        <div id="scheduleGrid"></div>
-    </div>
-    <div class="calendar-col">
-        <div class="calendar" id="calendar"></div>
-    </div>
+<div class="main">
+  <div class="lside">
+    <img src="logo.jpg" alt="Логотип">
+    <div class="ltxt">Форма Фитнес</div>
+  </div>
+  <div class="sw"><div id="shd"></div><div id="sc"></div></div>
+  <div class="cw"><div id="cal"></div></div>
 </div>
 
-<!-- Панель админа -->
-<div id="adminPanel" class="admin-box">
-    <h3 style="margin-bottom:15px">Админ-панель</h3>
-    <button class="abtn-notify" onclick="openModal('mBroadcast')">📢 Уведомление</button>
-    <button class="abtn-notify" style="background:#22c55e" onclick="openModal('mAddClass')">➕ Добавить</button>
+<div class="ap" id="ap">
+  <h3>Панель администратора</h3>
+  <div class="ar">
+    <button class="ab w" onclick="openSE()">Расписание</button>
+    <button class="ab d" onclick="exA()">Выйти</button>
+  </div>
 </div>
 
-<!-- МОДАЛКИ -->
+<div class="mo" id="mS"><div class="mx">
+  <h3>Запись на занятие</h3>
+  <input type="text" id="iN" placeholder="Ваше имя" maxlength="30">
+  <input type="tel" id="iP" placeholder="Телефон" maxlength="20">
+  <button class="bo" onclick="doSg()">Записаться</button>
+</div></div>
 
-<!-- Ввод Имени -->
-<div class="overlay" id="mName">
-    <div class="modal">
-        <h3>Ваши имя и фамилия</h3>
-        <input type="text" id="userName" placeholder="Имя и Фамилия">
-        <div class="m-btns">
-            <button class="m-ok" onclick="saveName()">Далее</button>
-        </div>
-    </div>
-</div>
+<div class="mo" id="mA"><div class="mx">
+  <h3>Код администратора</h3>
+  <input type="password" id="iC" placeholder="Введите код">
+  <button class="bo" onclick="tryA()">Подтвердить</button>
+</div></div>
 
-<!-- Ввод Телефона -->
-<div class="overlay" id="mPhone">
-    <div class="modal">
-        <h3>Ваш телефон</h3>
-        <input type="tel" id="userPhone" placeholder="+7 (999) 000-00-00">
-        <div class="m-btns">
-            <button class="m-ok" onclick="savePhone()">Завершить</button>
-        </div>
-    </div>
-</div>
+<div class="mo" id="mE"><div class="mx" style="max-width:580px;max-height:90vh;display:flex;flex-direction:column">
+  <h3>Редактор расписания</h3>
+  <div style="display:flex;gap:5px;align-items:center;margin-bottom:6px;flex-shrink:0">
+    <button class="b bg" onclick="pW()">&#9664;</button>
+    <input type="date" id="wP" style="flex:1;margin:0;min-width:0">
+    <button class="b bg" onclick="nW()">&#9654;</button>
+    <button class="b bg" onclick="ldE()">Загрузить</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;min-height:0"><div id="eB"></div></div>
+  <div style="flex-shrink:0;display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
+    <button class="b bg" onclick="svW()">&#128190; Сохранить</button>
+    <button class="b" style="background:#ff9800;color:#fff" onclick="cpP()">&#128203; С прошлой</button>
+    <button class="b br" onclick="clW()">&#128465; Очистить</button>
+    <button class="b" style="background:#9e9e9e;color:#fff" onclick="clMo('mE')">Закрыть</button>
+  </div>
+</div></div>
 
-<!-- Подтверждение отмены -->
-<div class="overlay" id="mCancel">
-    <div class="modal">
-        <h3>Отменить запись?</h3>
-        <div class="m-btns">
-            <button class="m-ok" onclick="confirmCancel()">Да, отменить</button>
-            <button class="m-no" onclick="closeModal('mCancel')">Нет</button>
-        </div>
-    </div>
-</div>
+<div class="mo" id="mN"><div class="mx">
+  <h3>Уведомления</h3>
+  <div id="nL" class="nl"></div>
+  <button class="bo" onclick="clMo('mN')" style="margin-top:10px">Закрыть</button>
+</div></div>
 
-<!-- Рассылка админа -->
-<div class="overlay" id="mBroadcast">
-    <div class="modal">
-        <h3>Новое уведомление всем</h3>
-        <textarea id="bcText" placeholder="Введите текст..."></textarea>
-        <div class="m-btns">
-            <button class="m-ok" onclick="sendBroadcast()">Отправить</button>
-            <button class="m-no" onclick="closeModal('mBroadcast')">Отмена</button>
-        </div>
-    </div>
-</div>
+<div class="mo" id="mD"><div class="mx">
+  <div id="dTx" style="margin-bottom:10px;font-size:14px"></div>
+  <div style="display:flex;gap:8px">
+    <button class="bo" id="dOk" style="flex:1">Да</button>
+    <button class="bo" id="dNo" style="flex:1;background:#9e9e9e">Нет</button>
+  </div>
+</div></div>
 
-<!-- Добавление занятия -->
-<div class="overlay" id="mAddClass">
-    <div class="modal">
-        <h3>Добавить занятие</h3>
-        <input type="date" id="newDate">
-        <input type="time" id="newTime">
-        <input type="text" id="newName" placeholder="Название">
-        <input type="text" id="newTrainer" placeholder="Тренер">
-        <input type="number" id="newMax" placeholder="Мест" value="10">
-        <div class="m-btns">
-            <button class="m-ok" onclick="addClass()">Создать</button>
-            <button class="m-no" onclick="closeModal('mAddClass')">Отмена</button>
-        </div>
-    </div>
-</div>
+<div class="mo" id="mL"><div class="mx">
+  <div id="lTx" style="margin-bottom:10px;font-size:14px"></div>
+  <button class="bo" id="lOk">OK</button>
+</div></div>
 
-<div class="notif-panel" id="notifPanel">
-    <h4 style="margin-bottom:10px">Уведомления</h4>
-    <div id="notifList"></div>
-</div>
-
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
-// !!! ВСТАВЬ СВОИ ДАННЫЕ ОТ FIREBASE СЮДА !!!
-const firebaseConfig = {
+console.log("=== APP START ===");
+
+var FC={
   apiKey:"AIzaSyCmJcDses0fO1s9E5ZoSSRhiEdCcEr3emI",
   authDomain:"forma-fit-zgr.firebaseapp.com",
   databaseURL:"https://forma-fit-zgr-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -205,268 +191,506 @@ const firebaseConfig = {
 };
 var ACODE="fit2024";
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+/* ===== Globals ===== */
+var uid=null,isA=false,bk={},db=null;
+var wC={},nwS=new Set(),alerts=[];
+var tod=new Date(),vd=new Date(tod),sm="w";
+var edD=null,edSch=[],pS=null;
 
-let currentUser = JSON.parse(localStorage.getItem('fitness_user')) || null;
-let currentWeekStart = getMonday(new Date());
-let cancelTarget = null;
+/* ===== Helpers ===== */
+function $(i){return document.getElementById(i)}
+function E(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function S2(n){return n<10?"0"+n:""+n}
+function Fd(d){return d.getFullYear()+"-"+S2(d.getMonth()+1)+"-"+S2(d.getDate())}
+function PD(s){return new Date(s+"T00:00:00")}
+function gM(d){var r=new Date(d),w=r.getDay();r.setDate(r.getDate()-((w+6)%7));r.setHours(0,0,0,0);return r}
+function wK(d){return Fd(gM(d))}
+function gid(){return "x"+Date.now()+"_"+Math.random().toString(36).substr(2,5)}
 
-// Инициализация
-window.onload = () => {
-    renderWeek();
-    loadCalendar();
-    listenNotifs();
-    checkPushReminders();
-    if('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
-};
+var MN=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+var WD=["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
+var WDs=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
 
-// --- ВСПОМОГАТЕЛЬНОЕ ---
-function getMonday(d) {
-    d = new Date(d);
-    let day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6:1);
-    return new Date(d.setDate(diff));
+function mkEmpty(){
+  return[
+    {day:"Понедельник",dow:1,cls:[]},
+    {day:"Вторник",dow:2,cls:[]},
+    {day:"Среда",dow:3,cls:[]},
+    {day:"Четверг",dow:4,cls:[]},
+    {day:"Пятница",dow:5,cls:[]},
+    {day:"Суббота",dow:6,cls:[]},
+    {day:"Воскресенье",dow:7,cls:[]}
+  ]
 }
-function formatDate(d) { return d.toISOString().split('T')[0]; }
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-// --- ПОЛЬЗОВАТЕЛЬ ---
-function checkAuth(callback) {
-    if (currentUser && currentUser.name && currentUser.phone) {
-        callback();
+/* ===== Seed empty weeks for calendar display ===== */
+(function(){
+  var mon=gM(tod);
+  for(var i=-3;i<10;i++){
+    var d=new Date(mon);d.setDate(d.getDate()+i*7);
+    wC[Fd(d)]=mkEmpty()
+  }
+  console.log("Seeded",Object.keys(wC).length,"weeks")
+})();
+
+/* ===== Theme ===== */
+(function(){if(localStorage.getItem("th")==="d")document.documentElement.setAttribute("data-theme","dark")})();
+function aTB(){$("tBtn").textContent=document.documentElement.hasAttribute("data-theme")?"☀️":"🌙"}
+function togT(){var d=document.documentElement.hasAttribute("data-theme");
+  if(d){document.documentElement.removeAttribute("data-theme");localStorage.setItem("th","l")}
+  else{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("th","d")}aTB()}
+aTB();
+
+/* ===== Week Data from Firebase ===== */
+
+// Convert Firebase array/object to our format
+function parseWeek(raw){
+  if(!raw)return null;
+  var result=[];
+  for(var i=0;i<7;i++){
+    var src=raw[i]||raw[""+i]||null;
+    result.push({
+      day:WD[i+1]||("День "+(i+1)),
+      dow:i+1,
+      cls:src&&src.cls?parseCls(src.cls):[]
+    })
+  }
+  return result
+}
+
+// Convert Firebase classes to our format
+function parseCls(raw){
+  if(!raw)return[];
+  if(Array.isArray(raw)){
+    var r=[];
+    for(var i=0;i<raw.length;i++){
+      var c=raw[i];
+      if(c&&c.name)r.push({id:c.id||gid(),time:c.time||"00:00",name:c.name,max:+c.max||15})
+    }
+    return r
+  }
+  // It's an object (Firebase converted array to object)
+  var keys=Object.keys(raw).sort(function(a,b){return(+a)-(+b)});
+  var r2=[];
+  for(var j=0;j<keys.length;j++){
+    var c2=raw[keys[j]];
+    if(c2&&c2.name)r2.push({id:c2.id||gid(),time:c2.time||"00:00",name:c2.name,max:+c2.max||15})
+  }
+  return r2
+}
+
+// Prepare week data for Firebase save (use objects, not arrays)
+function prepForSave(sch){
+  var out={};
+  for(var i=0;i<sch.length;i++){
+    out[""+i]={day:sch[i].day,dow:sch[i].dow,cls:sch[i].cls||[]}
+  }
+  return out
+}
+
+function ldWk(d,cb){
+  var k=wK(d);
+  if(nwS.has(k)){console.log("Already loaded:",k);if(cb)cb();return}
+  if(!db){if(cb)cb();return}
+  console.log("Loading from DB:",k);
+  db.ref("weekOverrides/"+k).once("value",function(s){
+    var raw=s.val();
+    console.log("DB response for",k,":",raw);
+    if(raw){
+      nwS.add(k);
+      wC[k]=parseWeek(raw);
+      console.log("Parsed week",k,":",wC[k])
     } else {
-        openModal('mName');
-        window.pendingAction = callback;
+      // No override, keep seeded empty week
+      console.log("No override for",k);
+      nwS.delete(k)
     }
-}
-function saveName() {
-    const name = document.getElementById('userName').value.trim();
-    if(!name) return;
-    currentUser = { id: 'u' + Date.now(), name: name };
-    closeModal('mName');
-    openModal('mPhone');
-}
-function savePhone() {
-    const phone = document.getElementById('userPhone').value.trim();
-    if(!phone) return;
-    currentUser.phone = phone;
-    localStorage.setItem('fitness_user', JSON.stringify(currentUser));
-    closeModal('mPhone');
-    if(window.pendingAction) window.pendingAction();
+    if(cb)cb()
+  },function(e){
+    console.error("Load error:",k,e);
+    if(cb)cb()
+  })
 }
 
-// --- РАСПИСАНИЕ ---
-function changeWeek(dir) {
-    currentWeekStart.setDate(currentWeekStart.getDate() + (dir * 7));
-    renderWeek();
+function gWC(d){
+  var k=wK(d);
+  if(!wC[k]){return null}
+  var base=PD(k);
+  var result=[];
+  for(var i=0;i<wC[k].length;i++){
+    var di=wC[k][i];
+    var cd=new Date(base);cd.setDate(cd.getDate()+i);
+    result.push({day:di.day,dow:di.dow,date:Fd(cd),cls:di.cls.slice()})
+  }
+  return result
 }
 
-function renderWeek() {
-    const grid = document.getElementById('scheduleGrid');
-    const rangeText = document.getElementById('weekRange');
-    grid.innerHTML = '<p style="text-align:center; padding:20px;">Загрузка...</p>';
-    
-    let days = [];
-    for(let i=0; i<7; i++) {
-        let d = new Date(currentWeekStart);
-        d.setDate(d.getDate() + i);
-        days.push(formatDate(d));
+function gCD(week,ds){
+  if(!week)return null;
+  for(var i=0;i<week.length;i++)if(week[i].date===ds)return week[i];
+  return null
+}
+
+function hWk(k){
+  if(!wC[k])return false;
+  for(var i=0;i<wC[k].length;i++)if(wC[k][i].cls&&wC[k][i].cls.length>0)return true;
+  return false
+}
+
+function hW(d){return hWk(wK(d))}
+
+function hB(ds){
+  var week=gWC(PD(ds));if(!week)return false;
+  var day=gCD(week,ds);if(!day)return false;
+  for(var i=0;i<day.cls.length;i++){
+    var sid=day.cls[i].id+"_"+ds;
+    if(bk[sid]&&bk[sid][uid])return true
+  }
+  return false
+}
+
+/* ===== User Info ===== */
+function updUI(){
+  var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
+  $("uNm").textContent=fn||"-";$("uPh").textContent=fp||"-";
+  if(fn||fp)$("uinfo").style.display="flex"
+}
+function editU(){var n=prompt("Ваше имя:",localStorage.getItem("fn")||"");
+  if(n!==null&&n.trim()){localStorage.setItem("fn",n.trim());updUI()}}
+function editP(){var n=prompt("Ваш телефон:",localStorage.getItem("fp")||"");
+  if(n!==null){localStorage.setItem("fp",n.trim());updUI()}}
+
+/* ===== Render ===== */
+function render(){
+  try{rCal()}catch(e){console.error("rCal:",e)}
+  try{rSch()}catch(e){console.error("rSch:",e)}
+  if(uid)$("iBtn").classList.add("sh");else $("iBtn").classList.remove("sh");
+  updUI()
+}
+
+function rCal(){
+  var h=bMo(tod.getFullYear(),tod.getMonth());
+  var nm=tod.getMonth()===11?{y:tod.getFullYear()+1,m:0}:{y:tod.getFullYear(),m:tod.getMonth()+1};
+  h+=bMo(nm.y,nm.m);$("cal").innerHTML=h
+}
+
+function bMo(y,m){
+  var fi=new Date(y,m,1),st=1-((fi.getDay()+6)%7),ts=Fd(tod);
+  var h='<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl"><tr>';
+  for(var i=0;i<7;i++)h+="<th>"+WDs[i]+"</th>";
+  h+="</tr>";var cur=new Date(y,m,st);
+  for(var ww=0;ww<6;ww++){h+="<tr>";for(var dd=0;dd<7;dd++){
+    var ds=Fd(cur),isCm=cur.getMonth()===m,isCs=cur.getDay()>=1&&cur.getDay()<=5;
+    var isT=ds===ts,hasB=isCm&&hB(ds),hasS=isCm&&hWk(wK(cur)),isSel=sm==="d"&&ds===Fd(vd);
+    h+="<td>";
+    if(isCm){var c="cd";
+      if(isT)c+=" tday";else if(hasB)c+=" hb";else if(isSel)c+=" soy";
+      if(!hasS&&isCs&&!isT&&!hasB)c+=" gh";else if(!isT&&!hasB&&!isSel)c+=" oy";
+      h+='<span class="'+c+'" data-d="'+ds+'">'+cur.getDate()+"</span>"}
+    h+="</td>";cur.setDate(cur.getDate()+1)}h+="</tr>"}
+  h+="</table></div>";return h
+}
+
+function rSch(){
+  var h=rShd();
+  if(sm==="d"){h+=rDay(Fd(vd))}
+  else{var week=gWC(vd);
+    if(week){for(var i=0;i<week.length;i++)h+=rDD(week[i])}
+    else{ldWk(vd,function(){render()});h+='<div class="nc">Загрузка...</div>'}}
+  $("sc").innerHTML=h
+}
+
+function rShd(){
+  var h='<div class="shd">';
+  if(sm==="d"){var dd=PD(Fd(vd));
+    h+='<span class="ds">'+WD[dd.getDay()]+", "+Fd(vd).split("-").reverse().join(".")+"</span>";
+    h+='<button class="rdd" onclick="sW()">← Назад</button>'}
+  else{var mn=gM(vd),en=new Date(mn);en.setDate(en.getDate()+6);
+    h+='<button class="wb" onclick="nvg(-7)">&#9664;</button>';
+    h+='<span class="sv">'+Fd(mn).split("-").reverse().join(".")+" — "+Fd(en).split("-").reverse().join(".")+"</span>";
+    h+='<button class="wb" onclick="nvg(7)">&#9654;</button>'}
+  h+="</div>";return h
+}
+
+function rDay(ds){
+  var week=gWC(PD(ds));
+  if(!week){ldWk(PD(ds),function(){render()});return'<div class="nc">Загрузка...</div>'}
+  var day=gCD(week,ds);if(!day)return'<div class="nc">Нет данных</div>';return rDD(day)
+}
+
+function rDD(day){
+  var dd=PD(day.date),dayName=WD[dd.getDay()],dateStr=day.date.split("-").reverse().join(".");
+  var h='<div class="dy"><div class="dyhd">'+E(dayName)+' <span class="d2">('+dateStr+')</span></div>';
+  if(!day.cls||!day.cls.length)h+='<div class="nc">Занятий нет</div>';
+  else for(var i=0;i<day.cls.length;i++)h+=rSl(day.cls[i],day.date);
+  h+="</div>";return h
+}
+
+function rSl(s,ds){
+  var sid=s.id+"_"+ds,e=bk[sid]||{};
+  var ls=[];for(var k in e)if(e.hasOwnProperty(k))ls.push({u:k,n:e[k].name,p:e[k].phone||""});
+  var mi=uid&&e[uid],fu=ls.length>=s.max;
+  var h='<div class="sl"><div class="sll"><div class="st">'+E(s.time)+" — "+E(s.name)+"</div><div class='sn'>";
+  if(ls.length){h+="👥 ";for(var i=0;i<ls.length;i++){if(i)h+=", ";h+=E(ls[i].n);
+    if(ls[i].p)h+=" ("+E(ls[i].p)+")";if(isA)h+=' <button class="bdel" data-a="ar" data-s="'+sid+'" data-u="'+ls[i].u+'">&#10005;</button>'}}
+  else h+="Пока никто не записался";
+  h+='</div></div><div class="slr"><span class="ct">'+ls.length+"/"+s.max+"</span>";
+  if(uid&&mi)h+='<button class="b br" data-a="ca" data-s="'+sid+'">Отмена</button>';
+  else if(!fu)h+='<button class="b bg" data-a="sg" data-s="'+sid+'">&#128587; Записаться</button>';
+  else h+='<span style="color:var(--r);font-size:10px">Мест нет</span>';
+  if(isA&&ls.length)h+='<button class="bclr" data-a="ac" data-s="'+sid+'">Очистить</button>';
+  h+="</div></div>";return h
+}
+
+console.log("Render OK");
+
+/* ===== Schedule Editor ===== */
+function openSE(){edD=gM(vd);$("wP").value=Fd(edD);ldE();opMo("mE")}
+function pW(){var d=PD($("wP").value);d.setDate(d.getDate()-7);$("wP").value=Fd(d);ldE()}
+function nW(){var d=PD($("wP").value);d.setDate(d.getDate()+7);$("wP").value=Fd(d);ldE()}
+
+function ldE(){
+  var wd=PD($("wP").value+"T00:00:00");edD=gM(wd);
+  var k=Fd(edD);
+  console.log("Editor loading week:",k);
+  ldWk(wd,function(){
+    var ov=wC[k];
+    if(ov){
+      edSch=ov.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.map(function(c){
+        return{id:c.id,time:c.time,name:c.name,max:c.max}})}})
+    } else {
+      edSch=mkEmpty()
     }
-    
-    rangeText.innerText = new Date(days[0]).toLocaleDateString('ru', {day:'numeric', month:'short'}) + ' — ' + 
-                          new Date(days[6]).toLocaleDateString('ru', {day:'numeric', month:'short'});
-
-    db.ref('schedule').on('value', snapshot => {
-        const data = snapshot.val() || {};
-        grid.innerHTML = '';
-        
-        days.forEach(dateStr => {
-            const dayData = data[dateStr] || {};
-            const d = new Date(dateStr);
-            let html = `
-                <div class="day-card">
-                    <div class="day-title">${d.toLocaleDateString('ru', {weekday:'long', day:'numeric', month:'long'})}</div>
-            `;
-            
-            const classes = Object.entries(dayData);
-            if(classes.length === 0) {
-                html += `<p style="color:#4b5563; font-size:0.9em">Нет занятий</p>`;
-            } else {
-                classes.sort((a,b) => a[1].time.localeCompare(b[1].time)).forEach(([id, c]) => {
-                    const bookings = c.bookings ? Object.keys(c.bookings).length : 0;
-                    const max = c.maxSlots || 10;
-                    const isFull = bookings >= max;
-                    const isMy = currentUser && c.bookings && c.bookings[currentUser.id];
-                    
-                    html += `
-                        <div class="class-item">
-                            <div class="cls-time">${c.time}</div>
-                            <div class="cls-name">${c.name}</div>
-                            <div class="cls-trainer">${c.trainer}</div>
-                            <div class="cls-slots">Мест: ${bookings} / ${max}</div>
-                    `;
-                    
-                    if(isMy) {
-                        html += `
-                            <div class="booked-row">
-                                <span class="booked-text">✓ Вы записаны</span>
-                                <button class="btn-x" onclick="askCancel('${dateStr}','${id}')">✕</button>
-                            </div>`;
-                    } else if(isFull) {
-                        html += `<button class="btn-reserve" onclick="book('${dateStr}','${id}', true)">Добавить в резерв</button>`;
-                    } else {
-                        html += `<button class="btn-book" onclick="book('${dateStr}','${id}', false)">Записаться</button>`;
-                    }
-                    html += `</div>`;
-                });
-            }
-            html += `</div>`;
-            grid.innerHTML += html;
-        });
-    });
+    console.log("Editor loaded:",edSch.length,"days");
+    rET()
+  })
 }
 
-// --- ЗАПИСЬ ---
-function book(date, id, isReserve) {
-    checkAuth(() => {
-        if(isReserve) {
-            db.ref(`reserve/${date}/${id}/${currentUser.id}`).set({name: currentUser.name, phone: currentUser.phone});
-            alert('Вы добавлены в резерв!');
-        } else {
-            db.ref(`schedule/${date}/${id}/bookings/${currentUser.id}`).set({name: currentUser.name, phone: currentUser.phone});
-        }
-    });
-}
-
-function askCancel(date, id) {
-    cancelTarget = {date, id};
-    openModal('mCancel');
-}
-
-function confirmCancel() {
-    if(!cancelTarget) return;
-    db.ref(`schedule/${cancelTarget.date}/${cancelTarget.id}/bookings/${currentUser.id}`).remove();
-    closeModal('mCancel');
-}
-
-// --- КАЛЕНДАРЬ ---
-function loadCalendar() {
-    const cal = document.getElementById('calendar');
-    const now = new Date();
-    const todayStr = formatDate(now);
-    
-    db.ref('schedule').once('value', snapshot => {
-        const data = snapshot.val() || {};
-        const schedDates = Object.keys(data);
-        
-        let h = `<div class="cal-grid">`;
-        ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(dn => h+=`<div class="cal-dn">${dn}</div>`);
-        
-        let firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        let lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        let offset = (firstDay.getDay() || 7) - 1;
-
-        for(let i=0; i<offset; i++) h += `<div></div>`;
-        for(let d=1; d<=lastDay.getDate(); d++) {
-            let cur = new Date(now.getFullYear(), now.getMonth(), d);
-            let s = formatDate(cur);
-            let cls = 'cal-d';
-            if(s === todayStr) cls += ' today';
-            if(schedDates.includes(s)) cls += ' has-classes';
-            h += `<div class="${cls}" onclick="jumpToDate('${s}')">${d}</div>`;
-        }
-        h += `</div>`;
-        cal.innerHTML = h;
-    });
-}
-
-function jumpToDate(s) {
-    currentWeekStart = getMonday(new Date(s));
-    renderWeek();
-}
-
-// --- УВЕДОМЛЕНИЯ ---
-function toggleNotifs() {
-    document.getElementById('notifPanel').classList.toggle('open');
-    localStorage.setItem('lastReadNotif', Date.now());
-    document.getElementById('badge').classList.remove('show');
-}
-
-function listenNotifs() {
-    db.ref('broadcasts').on('value', snap => {
-        const list = document.getElementById('notifList');
-        const data = snap.val() || {};
-        const items = Object.values(data).reverse();
-        
-        list.innerHTML = items.length ? '' : 'Нет новых уведомлений';
-        items.forEach(m => {
-            list.innerHTML += `<div class="notif-item">${m.text}</div>`;
-        });
-
-        const lastRead = localStorage.getItem('lastReadNotif') || 0;
-        const newCount = items.filter(i => i.ts > lastRead).length;
-        if(newCount > 0) {
-            const b = document.getElementById('badge');
-            b.innerText = newCount;
-            b.classList.add('show');
-        }
-    });
-}
-
-// ПУШ-НАПОМИНАНИЯ (локальные имитации через браузер)
-function checkPushReminders() {
-    setInterval(() => {
-        if(!currentUser) return;
-        const now = new Date();
-        const hr = now.getHours();
-        const min = now.getMinutes();
-        
-        // В 10:00 каждое утро
-        if(hr === 10 && min === 0) {
-            db.ref('schedule/' + formatDate(now)).once('value', s => {
-                const classes = s.val();
-                if(classes) {
-                    Object.values(classes).forEach(c => {
-                        if(c.bookings && c.bookings[currentUser.id]) {
-                            new Notification("ФОРМА", { body: "У вас сегодня занятие: " + c.name, silent: true });
-                        }
-                    });
-                }
-            });
-        }
-    }, 60000);
-}
-
-// --- АДМИН-ФУНКЦИИ ---
-function sendBroadcast() {
-    const text = document.getElementById('bcText').value;
-    if(!text) return;
-    db.ref('broadcasts').push({text: text, ts: Date.now()});
-    closeModal('mBroadcast');
-    document.getElementById('bcText').value = '';
-}
-
-function addClass() {
-    const d = document.getElementById('newDate').value;
-    const t = document.getElementById('newTime').value;
-    const n = document.getElementById('newName').value;
-    const tr = document.getElementById('newTrainer').value;
-    const m = document.getElementById('newMax').value;
-    if(!d || !t || !n) return;
-    db.ref(`schedule/${d}`).push({time: t, name: n, trainer: tr, maxSlots: parseInt(m)});
-    closeModal('mAddClass');
-}
-
-// Вход в админку: Ctrl + Shift + A
-document.addEventListener('keydown', e => {
-    if(e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
-        document.getElementById('adminPanel').classList.toggle('open');
+function rET(){
+  var h='<table class="et"><tr><th style="width:90px">День</th><th>Время</th><th>Занятие</th><th style="width:50px">Макс</th><th style="width:25px"></th></tr>';
+  for(var di=0;di<edSch.length;di++){
+    var day=edSch[di];
+    for(var ci=0;ci<day.cls.length;ci++){
+      var s=day.cls[ci];
+      h+='<tr><td style="font-weight:600;vertical-align:top;padding-top:5px">'+(ci===0?E(day.day):"")+"</td>";
+      h+='<td><input type="time" data-d="'+di+'" data-c="'+ci+'" data-f="time" value="'+s.time+'"></td>';
+      h+='<td><input type="text" data-d="'+di+'" data-c="'+ci+'" data-f="name" value="'+E(s.name)+'"></td>';
+      h+='<td><input type="number" data-d="'+di+'" data-c="'+ci+'" data-f="max" value="'+s.max+'" min="1" max="99"></td>';
+      h+='<td><button class="bdel" data-a="dc" data-d="'+di+'" data-c="'+ci+'" style="font-size:14px">&#10005;</button></td></tr>'
     }
+    h+='<tr><td>'+(day.cls.length===0?E(day.day):"")+'</td><td colspan="4"><button class="b bg" data-a="ac2" data-d="'+di+'" style="font-size:10px;padding:2px 6px">+ Добавить</button></td></tr>'
+  }
+  h+='</table>';$("eB").innerHTML=h
+}
+
+function svE(){
+  var ins=$("eB").querySelectorAll("input");
+  for(var i=0;i<ins.length;i++){
+    var inp=ins[i],di=+inp.dataset.d,ci=+inp.dataset.c,f=inp.dataset.f;
+    if(edSch[di]&&edSch[di].cls[ci])
+      edSch[di].cls[ci][f]=f==="max"?Math.max(1,+inp.value||10):inp.value
+  }
+}
+
+function svW(){
+  if(!isA||!db)return;svE();
+  var k=Fd(edD);
+  console.log("Saving week:",k);
+  console.log("Data:",JSON.stringify(edSch));
+  // Save with object keys (not array)
+  var toSave=prepForSave(edSch);
+  console.log("Prepared:",JSON.stringify(toSave));
+  db.ref("weekOverrides/"+k).set(toSave,function(e){
+    if(e){
+      console.error("Save error:",e);
+      sAl("Ошибка: "+e.message)
+    } else {
+      console.log("Saved OK:",k);
+      // Update local cache
+      wC[k]=edSch.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.slice()}});
+      nwS.add(k);
+      clMo("mE");
+      render();
+      sAl("Расписание сохранено!")
+    }
+  })
+}
+
+function cpP(){
+  var d=new Date(edD);d.setDate(d.getDate()-7);
+  var pk=Fd(d);
+  ldWk(d,function(){
+    var prev=wC[pk];
+    edSch=prev?prev.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.map(function(c){
+      return{id:gid(),time:c.time,name:c.name,max:c.max}})}}):mkEmpty();
+    rET()
+  })
+}
+
+function clW(){
+  if(!confirm("Очистить все занятия на эту неделю?"))return;
+  for(var i=0;i<edSch.length;i++)edSch[i].cls=[];rET()
+}
+
+console.log("Editor OK");
+
+/* ===== Booking ===== */
+function openSg(sid){
+  var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
+  if(fn&&uid&&db){
+    if(bk[sid]&&bk[sid][uid]){sAl("Вы уже записаны!");return}
+    db.ref("bookings/"+sid+"/"+uid).set({name:fn,phone:fp||"",t:firebase.database.ServerValue.TIMESTAMP});
+    var el=document.querySelector('[data-s="'+sid+'"][data-a="sg"]');
+    if(el){var p=el.closest(".sl");if(p){p.classList.add("flash");setTimeout(function(){p.classList.remove("flash")},1200)}}
+  } else {
+    pS=sid;$("iN").value=fn||"";$("iP").value=fp||"";opMo("mS")
+  }
+}
+
+function doSg(){
+  var n=$("iN").value.trim(),p=$("iP").value.trim();
+  if(!n){sAl("Введите имя");return}
+  if(!uid||!db){sAl("Подождите загрузки...");return}
+  if(!pS)return;
+  if(bk[pS]&&bk[pS][uid]){sAl("Вы уже записаны!");clMo("mS");return}
+  localStorage.setItem("fn",n);localStorage.setItem("fp",p);updUI();
+  db.ref("bookings/"+pS+"/"+uid).set({name:n,phone:p,t:firebase.database.ServerValue.TIMESTAMP});clMo("mS")
+}
+
+function doCa(sid){if(!uid||!db)return;
+  sCo("Отменить запись на это занятие?",function(){db.ref("bookings/"+sid+"/"+uid).remove()})}
+
+/* ===== Admin ===== */
+var taps=0,ttm=null;
+function tapA(){taps++;if(taps>=5){taps=0;
+  if(isA)sAl("Вы уже администратор!");else{opMo("mA");$("iC").value="";$("iC").focus()}}
+  clearTimeout(ttm);ttm=setTimeout(function(){taps=0},1000)}
+function tryA(){var c=$("iC").value;
+  if(c===ACODE&&uid&&db){db.ref("admins/"+uid).set(true);clMo("mA")}
+  else if(!uid)sAl("Подождите...");else sAl("Неверный код!")}
+function exA(){if(!uid||!db)return;sCo("Выйти из режима администратора?",function(){db.ref("admins/"+uid).remove()})}
+function aR(sid,tu){if(!isA)return;sCo("Удалить запись?",function(){db.ref("bookings/"+sid+"/"+tu).remove()})}
+function aC(sid){if(!isA)return;sCo("Удалить ВСЕ записи?",function(){db.ref("bookings/"+sid).remove()})}
+
+/* ===== Dialogs ===== */
+function sCo(msg,cb){$("dTx").textContent=msg;opMo("mD");
+  $("dOk").onclick=function(){clMo("mD");cb()};$("dNo").onclick=function(){clMo("mD")}}
+function sAl(msg){$("lTx").textContent=msg;opMo("mL");$("lOk").onclick=function(){clMo("mL")}}
+function opMo(id){$(id).classList.add("sh")}
+function clMo(id){$(id).classList.remove("sh")}
+
+/* ===== Notifications ===== */
+function aAl(msg){if(alerts.length&&alerts[alerts.length-1].message===msg)return;
+  alerts.push({message:msg,time:Date.now()});$("bdot").style.display="block"}
+function showNM(){var h="";
+  if(!alerts.length)h='<div class="nc">Нет уведомлений</div>';
+  else{var rev=alerts.slice().reverse();for(var i=0;i<rev.length;i++){
+    h+='<div class="ni"><div class="nm">'+E(rev[i].message)+'</div><div class="nt">'+new Date(rev[i].time).toLocaleString("ru")+'</div></div>'}}
+  $("nL").innerHTML=h;opMo("mN");$("bdot").style.display="none"}
+function sBN(t,b){if(Notification&&Notification.permission==="granted")try{new Notification(t,{body:b})}catch(e){}}
+
+function cNtf(){var now=new Date(),ds=Fd(now),week=gWC(now);if(!week)return;
+  var ns=JSON.parse(localStorage.getItem("ns")||"{}"),tb=[];
+  for(var di=0;di<week.length;di++){if(week[di].date===ds){
+    for(var ci=0;ci<week[di].cls.length;ci++){var s=week[di].cls[ci];
+      if(bk[s.id+"_"+ds]&&bk[s.id+"_"+ds][uid])tb.push(s)}}}
+  if(!tb.length)return;
+  if(now.getHours()===9&&now.getMinutes()<2){var k="m9_"+ds;if(!ns[k]){ns[k]=1;localStorage.setItem("ns",JSON.stringify(ns));
+    var tx="Сегодня "+tb.length+" занятий";aAl(tx);sBN("Напоминание",tx)}}
+  for(var ti=0;ti<tb.length;ti++){var s=tb[ti],tp=s.time.split(":"),cl=new Date(now);
+    cl.setHours(+tp[0],+tp[1],0,0);var mB=(cl-now)/60000;
+    if(mB>=119.5&&mB<=120.5){var k="m2h_"+s.id+"_"+ds;if(!ns[k]){ns[k]=1;localStorage.setItem("ns",JSON.stringify(ns));
+      var tx="Через 2ч: "+s.time+" "+s.name;aAl(tx);sBN(s.time+" "+s.name,"Занятие через 2 часа!")}}}}
+
+/* ===== Events ===== */
+document.addEventListener("click",function(e){
+  var ce=e.target.closest(".cd[data-d]");
+  if(ce){sm="d";vd=PD(ce.dataset.d);render();return}
+  var el=e.target.closest("[data-a]");
+  if(!el)return;var a=el.dataset.a,sid=el.dataset.s;
+  if(a==="sg")openSg(sid);else if(a==="ca")doCa(sid);
+  else if(a==="ar")aR(sid,el.dataset.u);else if(a==="ac")aC(sid);
+  else if(a==="ac2"){var di2=+el.dataset.d;svE();
+    edSch[di2].cls.push({id:gid(),time:"10:00",name:"Занятие",max:15});rET()}
+  else if(a==="dc"){var di3=+el.dataset.d,ci3=+el.dataset.c;svE();
+    edSch[di3].cls.splice(ci3,1);rET()}
 });
-</script>
 
+var eBEl=$("eB");
+if(eBEl)eBEl.addEventListener("input",function(e){if(e.target.tagName==="INPUT")svE()});
+
+["mS","mA","mE","mN","mD","mL"].forEach(function(id){
+  $(id).addEventListener("click",function(e){if(e.target===this)clMo(id)})
+});
+
+$("iN").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
+$("iP").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
+$("iC").addEventListener("keydown",function(e){if(e.key==="Enter")tryA()});
+
+function nvg(days){vd.setDate(vd.getDate()+days);
+  // Load week data if not loaded
+  var k=wK(vd);
+  if(!nwS.has(k)&&db){ldWk(vd,function(){render()})}
+  render()
+}
+function sW(){sm="w";render()}
+
+console.log("Events OK");
+
+/* ===== Initial Render ===== */
+render();
+console.log("Initial render OK");
+
+/* ===== Firebase ===== */
+try{
+  firebase.initializeApp(FC);
+  var auth=firebase.auth();db=firebase.database();
+  console.log("Firebase init OK");
+  auth.signInAnonymously().catch(function(e){console.error("Auth err:",e);setSC("c-er","Ошибка")});
+  auth.onAuthStateChanged(function(user){
+    if(!user)return;uid=user.uid;
+    console.log("User:",uid);setSC("c-ok","Онлайн");$("iBtn").classList.add("sh");
+    if(Notification&&Notification.permission==="default")Notification.requestPermission();
+
+    // Load current + next week
+    ldWk(tod,function(){console.log("Current week loaded");render()});
+    var nw=new Date(tod);nw.setDate(nw.getDate()+7);
+    ldWk(nw,function(){console.log("Next week loaded");render()});
+
+    // Bookings listener
+    db.ref("bookings").on("value",function(s){bk=s.val()||{};render()},
+      function(e){console.error("bk err:",e);setSC("c-er","Ошибка")});
+
+    // Admin listener
+    db.ref("admins/"+uid).on("value",function(s){
+      isA=s.val()===true;
+      $("badge").style.display=isA?"inline-block":"none";
+      $("ap").style.display=isA?"block":"none";render()
+    });
+
+    // Week overrides listener (loads ALL saved weeks)
+    db.ref("weekOverrides").on("value",function(s){
+      var raw=s.val();
+      console.log("weekOverrides received:",raw);
+      if(!raw){render();return}
+      var keys=Object.keys(raw);
+      console.log("Week keys:",keys);
+      for(var i=0;i<keys.length;i++){
+        var k=keys[i];
+        nwS.add(k);
+        wC[k]=parseWeek(raw[k]);
+        console.log("Parsed week",k,":",wC[k])
+      }
+      render()
+    },function(e){console.error("weekOverrides err:",e)});
+
+    setInterval(cNtf,30000);setTimeout(cNtf,2000)
+  })
+}catch(e){console.error("FB err:",e);setSC("c-er","Ошибка")}
+
+function setSC(c,t){var el=$("cs");el.textContent=t;el.className="cs "+c}
+
+console.log("=== APP READY ===");
+</script>
 </body>
 </html>
