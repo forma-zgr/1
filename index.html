@@ -3,36 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Запись на фитнес</title>
+<title>ФОРМА - расписание</title>
 <style>
-:root{--bg:#f0f2f5;--c:#fff;--t:#333;--t2:#777;--t3:#aaa;--bd:#e0e0e0;--ip:#ddd;--g:#4caf50;--gh:#43a047;--r:#ef5350;--gbg:#e8f5e9;--gcl:#2e7d32;--abg:#fff3e0;--abd:#ffcc80;--acl:#e65100;--sh:0 2px 8px rgba(0,0,0,.08);--mb:#fff}
-[data-theme="dark"]{--bg:#121212;--c:#1e1e1e;--t:#e0e0e0;--t2:#aaa;--t3:#666;--bd:#333;--ip:#444;--g:#66bb6a;--gh:#4caf50;--r:#ef5350;--gbg:#1b3a1b;--gcl:#81c784;--abg:#3e2723;--abd:#5d4037;--acl:#ffab91;--sh:0 2px 8px rgba(0,0,0,.3);--mb:#252525}
+:root{--bg:#f0f2f5;--c:#fff;--t:#333;--t2:#777;--t3:#aaa;--bd:#e0e0e0;--ip:#ddd;--g:#4caf50;--gh:#43a047;--r:#ef5350;--gbg:#e8f5e9;--gcl:#2e7d32;--abg:#fff3e0;--abd:#ffcc80;--acl:#e65100;--sh:0 2px 8px rgba(0,0,0,.08);--mb:#fff;--blue:#2196f3;--icon:#555}
+[data-theme="dark"]{--bg:#121212;--c:#1e1e1e;--t:#e0e0e0;--t2:#aaa;--t3:#666;--bd:#333;--ip:#444;--g:#66bb6a;--gh:#4caf50;--r:#ef5350;--gbg:#1b3a1b;--gcl:#81c784;--abg:#3e2723;--abd:#5d4037;--acl:#ffab91;--sh:0 2px 8px rgba(0,0,0,.3);--mb:#252525;--blue:#64b5f6;--icon:#ffc107}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--t);min-height:100vh;padding:16px;transition:background .3s,color .3s}
 
 .top{display:flex;justify-content:space-between;align-items:center;max-width:960px;margin:0 auto 14px;gap:8px;flex-wrap:wrap}
 .hdr{flex:1;text-align:center;user-select:none;min-width:120px}
-.hdr h1{font-size:20px;cursor:default}
+.hdr h1{font-size:20px;cursor:pointer}
 .uinfo{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .uinfo .uname,.uinfo .uphone{background:var(--c);border:1px solid var(--ip);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;box-shadow:var(--sh);color:var(--g);font-weight:500;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .uinfo .uname:hover,.uinfo .uphone:hover{background:var(--gbg)}
 .badge{display:none;background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;margin-top:4px}
 .cs{display:inline-block;font-size:10px;padding:2px 7px;border-radius:8px;margin-top:3px;color:#fff}
 .c-ok{background:#4caf50}.c-er{background:#e53935}.c-w{background:#ff9800}
-.tbtn,.ibtn{background:var(--c);border:1px solid var(--ip);border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh);flex-shrink:0;position:relative;transition:transform .15s}
+.tbtn,.ibtn{background:var(--c);border:1px solid var(--ip);border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh);flex-shrink:0;position:relative;transition:transform .15s;color:var(--icon)}
 .tbtn:hover,.ibtn:hover{transform:scale(1.05)}.ibtn{display:none}.ibtn.sh{display:flex}
 .bdot{position:absolute;top:1px;right:1px;width:8px;height:8px;background:#e53935;border-radius:50%;display:none}
 
 .main{display:flex;gap:16px;max-width:960px;margin:0 auto;align-items:flex-start}
-.lside{flex-shrink:0;width:100px;text-align:center}
-.lside img{width:100px;height:100px;object-fit:contain;border-radius:12px;box-shadow:var(--sh)}
-.lside .ltxt{font-size:11px;color:var(--t3);margin-top:6px}
+.lside{flex-shrink:0;width:200px;text-align:center}
+.lside img{width:200px;height:200px;object-fit:contain;border:none;background:none;box-shadow:none}
 .sw{flex:1;min-width:0}.cw{flex-shrink:0;width:264px}
 
 .shd{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:var(--c);border-radius:8px;margin-bottom:10px;box-shadow:var(--sh);font-size:12px;gap:6px}
 .shd .ds{font-weight:600;color:var(--g)}.shd .sv{font-weight:600}
-.wb{background:var(--bg);border:1px solid var(--ip);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:16px}
-.wb:hover{background:var(--gbg)}
+.wb{background:var(--g);color:#fff;border:none;border-radius:5px;padding:2px 8px;cursor:pointer;font-size:16px;transition:opacity .15s}
+.wb:hover{opacity:.85}
 .rdd{background:var(--g);color:#fff;border:none;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px}
 
 .dy{background:var(--c);border-radius:10px;padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
@@ -47,19 +46,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .ct{background:var(--gbg);color:var(--gcl);padding:3px 7px;border-radius:14px;font-size:11px;font-weight:600}
 .b{border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;white-space:nowrap;transition:opacity .15s}.b:hover{opacity:.85}
 .bg{background:var(--g);color:#fff}.br{background:var(--r);color:#fff}
+.b-blue{background:var(--blue);color:#fff}
 .bdel{background:none;color:var(--t3);border:none;cursor:pointer;font-size:13px;padding:1px 2px}.bdel:hover{color:var(--r)}
 .bclr{background:var(--r);color:#fff;border:none;cursor:pointer;font-size:10px;padding:2px 5px;border-radius:3px;opacity:.7}.bclr:hover{opacity:1}
+.phone-icon{cursor:pointer;margin-left:4px;font-size:10px;opacity:0.6}.phone-icon:hover{opacity:1}
 
 .cb{background:var(--c);border-radius:10px;padding:10px;box-shadow:var(--sh);margin-bottom:10px}
 .ch{font-size:12px;font-weight:700;text-align:center;margin-bottom:6px}
 .ctbl{width:100%;border-collapse:collapse;font-size:11px}
 .ctbl th{padding:2px 0;text-align:center;color:var(--t3);font-weight:500;font-size:10px}
 .ctbl td{padding:2px 0;text-align:center}
-.cd{width:26px;height:26px;line-height:26px;border-radius:50%;display:inline-block;cursor:pointer;transition:all .15s}
+.cd{width:26px;height:26px;line-height:26px;display:inline-block;cursor:pointer;transition:all .15s;border-radius:50%;text-align:center}
 .cd.oy{color:var(--t3)}.cd.oy:hover{background:var(--bd)}
 .cd.soy{color:var(--t3);font-weight:700}
-.cd.tday{background:var(--g);color:#fff;font-weight:700}
-.cd.hb{border:2px solid var(--g);color:var(--g);font-weight:600}
+.cd.tday{background:none;color:var(--t);text-decoration:underline;text-decoration-color:#ffc107;text-decoration-thickness:2px;font-weight:700}
+.cd.has-schedule{font-weight:700}
+.cd.booked{border:2px solid #4caf50; background:transparent; font-weight:normal; color:var(--t); line-height:22px}
 .cd.gh{color:var(--ip);cursor:default}
 
 .mo{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:center}.mo.sh{display:flex}
@@ -88,14 +90,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 @keyframes flashG{0%{background:var(--gbg)}100%{background:transparent}}
 .flash{animation:flashG 1.2s ease-out}
 
-@media(max-width:700px){.main{flex-direction:column;align-items:center}.lside{width:80px}.lside img{width:80px;height:80px}.cw{width:100%;max-width:320px}.sl{flex-direction:column;align-items:flex-start}.slr{align-self:flex-end}.mx{max-width:95%;padding:16px}.uinfo .uname,.uinfo .uphone{max-width:80px;font-size:11px}}
+@media(max-width:700px){.main{flex-direction:column;align-items:center}.lside{width:120px}.lside img{width:120px;height:120px}.cw{width:100%;max-width:320px}.sl{flex-direction:column;align-items:flex-start}.slr{align-self:flex-end}.mx{max-width:95%;padding:16px}.uinfo .uname,.uinfo .uphone{max-width:80px;font-size:11px}}
 </style>
 </head>
 <body>
 
 <div class="top">
   <div class="hdr">
-    <h1 onclick="tapA()">Запись на занятия</h1>
+    <h1 onclick="tapA()">ФОРМА - расписание</h1>
     <div class="badge" id="badge">Администратор</div>
     <div id="cs" class="cs c-w">...</div>
   </div>
@@ -110,7 +112,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="main">
   <div class="lside">
     <img src="logo.jpg" alt="Логотип">
-    <div class="ltxt">Форма Фитнес</div>
   </div>
   <div class="sw"><div id="shd"></div><div id="sc"></div></div>
   <div class="cw"><div id="cal"></div></div>
@@ -120,13 +121,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <h3>Панель администратора</h3>
   <div class="ar">
     <button class="ab w" onclick="openSE()">Расписание</button>
+    <button class="ab" style="background:#2196f3" onclick="sendAdminNotification()">Уведомление</button>
     <button class="ab d" onclick="exA()">Выйти</button>
   </div>
 </div>
 
 <div class="mo" id="mS"><div class="mx">
   <h3>Запись на занятие</h3>
-  <input type="text" id="iN" placeholder="Ваше имя" maxlength="30">
+  <input type="text" id="iN" placeholder="Ваши имя и фамилия" maxlength="30">
   <input type="tel" id="iP" placeholder="Телефон" maxlength="20">
   <button class="bo" onclick="doSg()">Записаться</button>
 </div></div>
@@ -147,7 +149,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
   <div style="flex:1;overflow-y:auto;min-height:0"><div id="eB"></div></div>
   <div style="flex-shrink:0;display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
-    <button class="b bg" onclick="svW()">&#128190; Сохранить</button>
+    <button class="b bg" onclick="svW()">Сохранить сейчас</button>
     <button class="b" style="background:#ff9800;color:#fff" onclick="cpP()">&#128203; С прошлой</button>
     <button class="b br" onclick="clW()">&#128465; Очистить</button>
     <button class="b" style="background:#9e9e9e;color:#fff" onclick="clMo('mE')">Закрыть</button>
@@ -163,7 +165,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="mo" id="mD"><div class="mx">
   <div id="dTx" style="margin-bottom:10px;font-size:14px"></div>
   <div style="display:flex;gap:8px">
-    <button class="bo" id="dOk" style="flex:1">Да</button>
+    <button class="bo" id="dOk" style="flex:1;background:#ef5350">Да</button>
     <button class="bo" id="dNo" style="flex:1;background:#9e9e9e">Нет</button>
   </div>
 </div></div>
@@ -171,6 +173,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="mo" id="mL"><div class="mx">
   <div id="lTx" style="margin-bottom:10px;font-size:14px"></div>
   <button class="bo" id="lOk">OK</button>
+</div></div>
+
+<div class="mo" id="mNotifyInput"><div class="mx">
+  <h3>Отправить уведомление</h3>
+  <textarea id="notifyText" rows="3" placeholder="Введите текст уведомления..." style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid var(--ip);background:var(--c);color:var(--t);font-family:inherit"></textarea>
+  <button class="bo" onclick="sendNotificationToAll()">Отправить</button>
+  <button class="bo" style="background:#9e9e9e;margin-top:5px" onclick="clMo('mNotifyInput')">Отмена</button>
 </div></div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -189,13 +198,14 @@ var FC={
   appId:"1:1091167121540:web:43f386e58ed6519472d2d1",
   measurementId:"G-PX9Z0G911P"
 };
-var ACODE="fit2024";
+var ACODE="2022";
 
 /* ===== Globals ===== */
-var uid=null,isA=false,bk={},db=null;
+var uid=null,isA=false,bk={},waitlist={},db=null;
 var wC={},nwS=new Set(),alerts=[];
 var tod=new Date(),vd=new Date(tod),sm="w";
 var edD=null,edSch=[],pS=null;
+var saveTimeout=null; // для автосохранения
 
 /* ===== Helpers ===== */
 function $(i){return document.getElementById(i)}
@@ -243,7 +253,6 @@ aTB();
 
 /* ===== Week Data from Firebase ===== */
 
-// Convert Firebase array/object to our format
 function parseWeek(raw){
   if(!raw)return null;
   var result=[];
@@ -258,7 +267,6 @@ function parseWeek(raw){
   return result
 }
 
-// Convert Firebase classes to our format
 function parseCls(raw){
   if(!raw)return[];
   if(Array.isArray(raw)){
@@ -269,7 +277,6 @@ function parseCls(raw){
     }
     return r
   }
-  // It's an object (Firebase converted array to object)
   var keys=Object.keys(raw).sort(function(a,b){return(+a)-(+b)});
   var r2=[];
   for(var j=0;j<keys.length;j++){
@@ -279,7 +286,6 @@ function parseCls(raw){
   return r2
 }
 
-// Prepare week data for Firebase save (use objects, not arrays)
 function prepForSave(sch){
   var out={};
   for(var i=0;i<sch.length;i++){
@@ -301,7 +307,6 @@ function ldWk(d,cb){
       wC[k]=parseWeek(raw);
       console.log("Parsed week",k,":",wC[k])
     } else {
-      // No override, keep seeded empty week
       console.log("No override for",k);
       nwS.delete(k)
     }
@@ -331,6 +336,14 @@ function gCD(week,ds){
   return null
 }
 
+function hasScheduleOnDate(ds){
+  var week = gWC(PD(ds));
+  if(!week) return false;
+  var day = gCD(week, ds);
+  if(!day) return false;
+  return day.cls && day.cls.length > 0;
+}
+
 function hWk(k){
   if(!wC[k])return false;
   for(var i=0;i<wC[k].length;i++)if(wC[k][i].cls&&wC[k][i].cls.length>0)return true;
@@ -340,6 +353,7 @@ function hWk(k){
 function hW(d){return hWk(wK(d))}
 
 function hB(ds){
+  if(!uid) return false;
   var week=gWC(PD(ds));if(!week)return false;
   var day=gCD(week,ds);if(!day)return false;
   for(var i=0;i<day.cls.length;i++){
@@ -375,20 +389,53 @@ function rCal(){
 }
 
 function bMo(y,m){
-  var fi=new Date(y,m,1),st=1-((fi.getDay()+6)%7),ts=Fd(tod);
+  var firstDay = new Date(y, m, 1);
+  var lastDay = new Date(y, m+1, 0);
+  var daysInMonth = lastDay.getDate();
+  var startWeekday = firstDay.getDay();
+  var offset = startWeekday === 0 ? 6 : startWeekday - 1;
+  
   var h='<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl"><tr>';
   for(var i=0;i<7;i++)h+="<th>"+WDs[i]+"</th>";
-  h+="</tr>";var cur=new Date(y,m,st);
-  for(var ww=0;ww<6;ww++){h+="<tr>";for(var dd=0;dd<7;dd++){
-    var ds=Fd(cur),isCm=cur.getMonth()===m,isCs=cur.getDay()>=1&&cur.getDay()<=5;
-    var isT=ds===ts,hasB=isCm&&hB(ds),hasS=isCm&&hWk(wK(cur)),isSel=sm==="d"&&ds===Fd(vd);
-    h+="<td>";
-    if(isCm){var c="cd";
-      if(isT)c+=" tday";else if(hasB)c+=" hb";else if(isSel)c+=" soy";
-      if(!hasS&&isCs&&!isT&&!hasB)c+=" gh";else if(!isT&&!hasB&&!isSel)c+=" oy";
-      h+='<span class="'+c+'" data-d="'+ds+'">'+cur.getDate()+"</span>"}
-    h+="</td>";cur.setDate(cur.getDate()+1)}h+="</tr>"}
-  h+="</table></div>";return h
+  h+="</tr>";
+  var dayCounter = 1;
+  var today = new Date(tod.setHours(0,0,0,0));
+  
+  for(var row=0; row<6; row++) {
+    h+="<tr>";
+    for(var col=0; col<7; col++) {
+      var cellDay = dayCounter - offset;
+      if(cellDay < 1 || cellDay > daysInMonth) {
+        h+="<td></td>";
+        dayCounter++;
+        continue;
+      }
+      var ds = y+"-"+S2(m+1)+"-"+S2(cellDay);
+      var currentDate = new Date(ds);
+      var isPast = currentDate < today;
+      var hasSchedule = !isPast && hasScheduleOnDate(ds);
+      var isBooked = !isPast && hB(ds);
+      var isToday = ds === Fd(tod);
+      var isSelected = (sm==="d" && ds===Fd(vd));
+      
+      var c="cd";
+      if(isPast) {
+        c+=" gh";
+      } else {
+        if(isToday) c+=" tday";
+        if(isSelected) c+=" soy";
+        if(hasSchedule) c+=" has-schedule";
+        if(isBooked) c+=" booked";
+        if(!hasSchedule && !isBooked && !isToday && !isSelected) c+=" oy";
+      }
+      h+='<td><span class="'+c+'" data-d="'+ds+'">'+cellDay+'</span></td>';
+      dayCounter++;
+    }
+    h+="</tr>";
+    if(dayCounter - offset > daysInMonth && row>=4) break;
+  }
+  h+="</table></div>";
+  return h;
 }
 
 function rSch(){
@@ -430,16 +477,47 @@ function rSl(s,ds){
   var sid=s.id+"_"+ds,e=bk[sid]||{};
   var ls=[];for(var k in e)if(e.hasOwnProperty(k))ls.push({u:k,n:e[k].name,p:e[k].phone||""});
   var mi=uid&&e[uid],fu=ls.length>=s.max;
+  var wl = waitlist[sid] || {};
+  var inWaitlist = uid && wl[uid];
+  
   var h='<div class="sl"><div class="sll"><div class="st">'+E(s.time)+" — "+E(s.name)+"</div><div class='sn'>";
-  if(ls.length){h+="👥 ";for(var i=0;i<ls.length;i++){if(i)h+=", ";h+=E(ls[i].n);
-    if(ls[i].p)h+=" ("+E(ls[i].p)+")";if(isA)h+=' <button class="bdel" data-a="ar" data-s="'+sid+'" data-u="'+ls[i].u+'">&#10005;</button>'}}
-  else h+="Пока никто не записался";
+  if(ls.length){
+    h+="👥 ";
+    for(var i=0;i<ls.length;i++){
+      if(i)h+=", ";
+      h+=E(ls[i].n);
+      if(isA && ls[i].p){
+        h+=' <span class="phone-icon" title="Телефон" data-phone="'+E(ls[i].p)+'" onclick="showPhone(this)">📞</span>';
+      }
+    }
+  } else h+="Пока никто не записался";
+  if(isA && Object.keys(wl).length){
+    h+="<br><span style='font-size:10px;color:var(--blue)'>Резерв: ";
+    var wlNames=[];
+    for(var wu in wl)if(wl[wu].name)wlNames.push(E(wl[wu].name));
+    h+=wlNames.join(", ")+"</span>";
+  }
   h+='</div></div><div class="slr"><span class="ct">'+ls.length+"/"+s.max+"</span>";
-  if(uid&&mi)h+='<button class="b br" data-a="ca" data-s="'+sid+'">Отмена</button>';
-  else if(!fu)h+='<button class="b bg" data-a="sg" data-s="'+sid+'">&#128587; Записаться</button>';
-  else h+='<span style="color:var(--r);font-size:10px">Мест нет</span>';
+  if(uid){
+    if(mi){
+      h+='<span style="color:var(--g);font-weight:500;margin-right:4px">Вы записаны</span>';
+      h+='<button class="b br" data-a="ca" data-s="'+sid+'">✖</button>';
+    } else if(inWaitlist){
+      h+='<span style="color:var(--blue);font-weight:500;margin-right:4px">В резерве</span>';
+      h+='<button class="b br" data-a="cancelWait" data-s="'+sid+'">✖</button>';
+    } else if(!fu){
+      h+='<button class="b bg" data-a="sg" data-s="'+sid+'">Записаться</button>';
+    } else {
+      h+='<button class="b b-blue" data-a="addWait" data-s="'+sid+'">Добавить в резерв</button>';
+    }
+  }
   if(isA&&ls.length)h+='<button class="bclr" data-a="ac" data-s="'+sid+'">Очистить</button>';
   h+="</div></div>";return h
+}
+
+function showPhone(el){
+  var phone = el.getAttribute("data-phone");
+  if(phone) alert("Телефон: "+phone);
 }
 
 console.log("Render OK");
@@ -476,7 +554,7 @@ function rET(){
       h+='<td><input type="time" data-d="'+di+'" data-c="'+ci+'" data-f="time" value="'+s.time+'"></td>';
       h+='<td><input type="text" data-d="'+di+'" data-c="'+ci+'" data-f="name" value="'+E(s.name)+'"></td>';
       h+='<td><input type="number" data-d="'+di+'" data-c="'+ci+'" data-f="max" value="'+s.max+'" min="1" max="99"></td>';
-      h+='<td><button class="bdel" data-a="dc" data-d="'+di+'" data-c="'+ci+'" style="font-size:14px">&#10005;</button></td></tr>'
+      h+='<td><button class="bdel" data-a="dc" data-d="'+di+'" data-c="'+ci+'" style="font-size:14px">✖</button></td></tr>'
     }
     h+='<tr><td>'+(day.cls.length===0?E(day.day):"")+'</td><td colspan="4"><button class="b bg" data-a="ac2" data-d="'+di+'" style="font-size:10px;padding:2px 6px">+ Добавить</button></td></tr>'
   }
@@ -492,12 +570,19 @@ function svE(){
   }
 }
 
+function autoSave(){
+  if(saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(function(){
+    if(isA && db && edD){
+      svW();
+    }
+  }, 1000);
+}
+
 function svW(){
   if(!isA||!db)return;svE();
   var k=Fd(edD);
   console.log("Saving week:",k);
-  console.log("Data:",JSON.stringify(edSch));
-  // Save with object keys (not array)
   var toSave=prepForSave(edSch);
   console.log("Prepared:",JSON.stringify(toSave));
   db.ref("weekOverrides/"+k).set(toSave,function(e){
@@ -506,12 +591,10 @@ function svW(){
       sAl("Ошибка: "+e.message)
     } else {
       console.log("Saved OK:",k);
-      // Update local cache
       wC[k]=edSch.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.slice()}});
       nwS.add(k);
-      clMo("mE");
       render();
-      sAl("Расписание сохранено!")
+      // Не закрываем редактор, чтобы можно было продолжить редактирование
     }
   })
 }
@@ -523,18 +606,21 @@ function cpP(){
     var prev=wC[pk];
     edSch=prev?prev.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.map(function(c){
       return{id:gid(),time:c.time,name:c.name,max:c.max}})}}):mkEmpty();
-    rET()
+    rET();
+    autoSave();
   })
 }
 
 function clW(){
   if(!confirm("Очистить все занятия на эту неделю?"))return;
-  for(var i=0;i<edSch.length;i++)edSch[i].cls=[];rET()
+  for(var i=0;i<edSch.length;i++)edSch[i].cls=[];
+  rET();
+  autoSave();
 }
 
 console.log("Editor OK");
 
-/* ===== Booking ===== */
+/* ===== Booking & Waitlist ===== */
 function openSg(sid){
   var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
   if(fn&&uid&&db){
@@ -560,17 +646,113 @@ function doSg(){
 function doCa(sid){if(!uid||!db)return;
   sCo("Отменить запись на это занятие?",function(){db.ref("bookings/"+sid+"/"+uid).remove()})}
 
+function addToWaitlist(sid){
+  if(!uid||!db)return;
+  var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
+  if(!fn){sAl("Сначала укажите имя и фамилию");return;}
+  db.ref("waitlist/"+sid+"/"+uid).set({name:fn,phone:fp||"",t:firebase.database.ServerValue.TIMESTAMP});
+}
+
+function cancelWaitlist(sid){
+  if(!uid||!db)return;
+  sCo("Удалить из резерва?",function(){db.ref("waitlist/"+sid+"/"+uid).remove()});
+}
+
 /* ===== Admin ===== */
 var taps=0,ttm=null;
 function tapA(){taps++;if(taps>=5){taps=0;
   if(isA)sAl("Вы уже администратор!");else{opMo("mA");$("iC").value="";$("iC").focus()}}
   clearTimeout(ttm);ttm=setTimeout(function(){taps=0},1000)}
-function tryA(){var c=$("iC").value;
-  if(c===ACODE&&uid&&db){db.ref("admins/"+uid).set(true);clMo("mA")}
-  else if(!uid)sAl("Подождите...");else sAl("Неверный код!")}
+function tryA(){
+  var c=$("iC").value;
+  if(!uid){sAl("Подождите инициализации...");return;}
+  if(!db){sAl("Нет подключения к базе");return;}
+  if(c===ACODE){
+    db.ref("admins/"+uid).set(true, function(err){
+      if(err) sAl("Ошибка: "+err.message);
+      else {
+        clMo("mA");
+        sAl("Вы вошли как администратор");
+        isA=true;
+        $("badge").style.display="inline-block";
+        $("ap").style.display="block";
+        render();
+      }
+    });
+  } else {
+    sAl("Неверный код!");
+  }
+}
 function exA(){if(!uid||!db)return;sCo("Выйти из режима администратора?",function(){db.ref("admins/"+uid).remove()})}
 function aR(sid,tu){if(!isA)return;sCo("Удалить запись?",function(){db.ref("bookings/"+sid+"/"+tu).remove()})}
 function aC(sid){if(!isA)return;sCo("Удалить ВСЕ записи?",function(){db.ref("bookings/"+sid).remove()})}
+
+/* ===== Admin Notifications ===== */
+function sendAdminNotification(){
+  if(!isA){sAl("Доступно только администратору");return;}
+  opMo("mNotifyInput");
+  $("notifyText").value="";
+}
+function sendNotificationToAll(){
+  var text=$("notifyText").value.trim();
+  if(!text){sAl("Введите текст уведомления");return;}
+  if(!db)return;
+  var notifRef=db.ref("adminNotifications").push();
+  notifRef.set({
+    message:text,
+    timestamp:firebase.database.ServerValue.TIMESTAMP,
+    from:uid
+  },function(err){
+    if(err){sAl("Ошибка: "+err.message);}
+    else{clMo("mNotifyInput");sAl("Уведомление отправлено");}
+  });
+}
+function listenAdminNotifications(){
+  if(!db)return;
+  db.ref("adminNotifications").orderByChild("timestamp").limitToLast(20).on("child_added",function(snap){
+    var data=snap.val();
+    var msg=data.message;
+    if(Notification && Notification.permission==="granted"){
+      new Notification("Уведомление",{body:msg,silent:true});
+    }
+    aAl(msg);
+  });
+}
+function aAl(msg){
+  if(alerts.length && alerts[alerts.length-1].message===msg) return;
+  alerts.push({message:msg,time:Date.now()});
+  $("bdot").style.display="block";
+}
+function showNM(){
+  var h="";
+  if(!alerts.length) h='<div class="nc">Нет уведомлений</div>';
+  else{
+    var rev=alerts.slice().reverse();
+    for(var i=0;i<rev.length;i++){
+      h+='<div class="ni"><div class="nm">'+E(rev[i].message)+'</div><div class="nt">'+new Date(rev[i].time).toLocaleString("ru")+'</div></div>';
+    }
+  }
+  $("nL").innerHTML=h;
+  opMo("mN");
+  $("bdot").style.display="none";
+}
+function sBN(t,b){if(Notification&&Notification.permission==="granted")try{new Notification(t,{body:b,silent:true})}catch(e){}}
+
+/* ===== Notifications for clients (time-based) ===== */
+function cNtf(){
+  var now=new Date(),ds=Fd(now),week=gWC(now);if(!week)return;
+  var ns=JSON.parse(localStorage.getItem("ns")||"{}"),tb=[];
+  for(var di=0;di<week.length;di++){if(week[di].date===ds){
+    for(var ci=0;ci<week[di].cls.length;ci++){var s=week[di].cls[ci];
+      if(bk[s.id+"_"+ds]&&bk[s.id+"_"+ds][uid])tb.push(s)}}}
+  if(!tb.length)return;
+  if(now.getHours()===10&&now.getMinutes()<2){var k="m10_"+ds;if(!ns[k]){ns[k]=1;localStorage.setItem("ns",JSON.stringify(ns));
+    var tx="Сегодня "+tb.length+" занятий";aAl(tx);sBN("Напоминание",tx)}}
+  for(var ti=0;ti<tb.length;ti++){var s=tb[ti],tp=s.time.split(":"),cl=new Date(now);
+    cl.setHours(+tp[0],+tp[1],0,0);var mB=(cl-now)/60000;
+    if(mB>=119.5&&mB<=120.5){var k="m2h_"+s.id+"_"+ds;if(!ns[k]){ns[k]=1;localStorage.setItem("ns",JSON.stringify(ns));
+      var tx="Через 2ч: "+s.time+" "+s.name;aAl(tx);sBN(s.time+" "+s.name,"Занятие через 2 часа!")}}}
+}
 
 /* ===== Dialogs ===== */
 function sCo(msg,cb){$("dTx").textContent=msg;opMo("mD");
@@ -579,63 +761,75 @@ function sAl(msg){$("lTx").textContent=msg;opMo("mL");$("lOk").onclick=function(
 function opMo(id){$(id).classList.add("sh")}
 function clMo(id){$(id).classList.remove("sh")}
 
-/* ===== Notifications ===== */
-function aAl(msg){if(alerts.length&&alerts[alerts.length-1].message===msg)return;
-  alerts.push({message:msg,time:Date.now()});$("bdot").style.display="block"}
-function showNM(){var h="";
-  if(!alerts.length)h='<div class="nc">Нет уведомлений</div>';
-  else{var rev=alerts.slice().reverse();for(var i=0;i<rev.length;i++){
-    h+='<div class="ni"><div class="nm">'+E(rev[i].message)+'</div><div class="nt">'+new Date(rev[i].time).toLocaleString("ru")+'</div></div>'}}
-  $("nL").innerHTML=h;opMo("mN");$("bdot").style.display="none"}
-function sBN(t,b){if(Notification&&Notification.permission==="granted")try{new Notification(t,{body:b})}catch(e){}}
-
-function cNtf(){var now=new Date(),ds=Fd(now),week=gWC(now);if(!week)return;
-  var ns=JSON.parse(localStorage.getItem("ns")||"{}"),tb=[];
-  for(var di=0;di<week.length;di++){if(week[di].date===ds){
-    for(var ci=0;ci<week[di].cls.length;ci++){var s=week[di].cls[ci];
-      if(bk[s.id+"_"+ds]&&bk[s.id+"_"+ds][uid])tb.push(s)}}}
-  if(!tb.length)return;
-  if(now.getHours()===9&&now.getMinutes()<2){var k="m9_"+ds;if(!ns[k]){ns[k]=1;localStorage.setItem("ns",JSON.stringify(ns));
-    var tx="Сегодня "+tb.length+" занятий";aAl(tx);sBN("Напоминание",tx)}}
-  for(var ti=0;ti<tb.length;ti++){var s=tb[ti],tp=s.time.split(":"),cl=new Date(now);
-    cl.setHours(+tp[0],+tp[1],0,0);var mB=(cl-now)/60000;
-    if(mB>=119.5&&mB<=120.5){var k="m2h_"+s.id+"_"+ds;if(!ns[k]){ns[k]=1;localStorage.setItem("ns",JSON.stringify(ns));
-      var tx="Через 2ч: "+s.time+" "+s.name;aAl(tx);sBN(s.time+" "+s.name,"Занятие через 2 часа!")}}}}
-
-/* ===== Events ===== */
-document.addEventListener("click",function(e){
-  var ce=e.target.closest(".cd[data-d]");
-  if(ce){sm="d";vd=PD(ce.dataset.d);render();return}
-  var el=e.target.closest("[data-a]");
-  if(!el)return;var a=el.dataset.a,sid=el.dataset.s;
-  if(a==="sg")openSg(sid);else if(a==="ca")doCa(sid);
-  else if(a==="ar")aR(sid,el.dataset.u);else if(a==="ac")aC(sid);
-  else if(a==="ac2"){var di2=+el.dataset.d;svE();
-    edSch[di2].cls.push({id:gid(),time:"10:00",name:"Занятие",max:15});rET()}
-  else if(a==="dc"){var di3=+el.dataset.d,ci3=+el.dataset.c;svE();
-    edSch[di3].cls.splice(ci3,1);rET()}
-});
-
-var eBEl=$("eB");
-if(eBEl)eBEl.addEventListener("input",function(e){if(e.target.tagName==="INPUT")svE()});
-
-["mS","mA","mE","mN","mD","mL"].forEach(function(id){
-  $(id).addEventListener("click",function(e){if(e.target===this)clMo(id)})
-});
-
-$("iN").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
-$("iP").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
-$("iC").addEventListener("keydown",function(e){if(e.key==="Enter")tryA()});
-
-function nvg(days){vd.setDate(vd.getDate()+days);
-  // Load week data if not loaded
+/* ===== Navigation restrictions ===== */
+function nvg(days){
+  var newDate=new Date(vd);
+  newDate.setDate(vd.getDate()+days);
+  var startOfCurrentWeek=gM(tod);
+  var startOfNewWeek=gM(newDate);
+  if(startOfNewWeek < startOfCurrentWeek){
+    sAl("Нельзя перейти на прошедшую неделю");
+    return;
+  }
+  vd=newDate;
   var k=wK(vd);
   if(!nwS.has(k)&&db){ldWk(vd,function(){render()})}
   render()
 }
 function sW(){sm="w";render()}
 
-console.log("Events OK");
+/* ===== Events ===== */
+document.addEventListener("click",function(e){
+  var ce=e.target.closest(".cd[data-d]");
+  if(ce){
+    var selectedDate=PD(ce.dataset.d);
+    if(selectedDate < new Date(tod.setHours(0,0,0,0))){
+      sAl("Нельзя выбрать прошедшую дату");
+      return;
+    }
+    sm="d";vd=selectedDate;render();return
+  }
+  var el=e.target.closest("[data-a]");
+  if(!el)return;var a=el.dataset.a,sid=el.dataset.s;
+  if(a==="sg")openSg(sid);
+  else if(a==="ca")doCa(sid);
+  else if(a==="addWait")addToWaitlist(sid);
+  else if(a==="cancelWait")cancelWaitlist(sid);
+  else if(a==="ar")aR(sid,el.dataset.u);
+  else if(a==="ac")aC(sid);
+  else if(a==="ac2"){
+    var di2=+el.dataset.d;
+    svE();
+    edSch[di2].cls.push({id:gid(),time:"10:00",name:"Занятие",max:15});
+    rET();
+    autoSave(); // автосохранение после добавления
+  }
+  else if(a==="dc"){
+    if(confirm("Удалить это занятие?")){
+      var di3=+el.dataset.d,ci3=+el.dataset.c;
+      svE();
+      edSch[di3].cls.splice(ci3,1);
+      rET();
+      autoSave(); // автосохранение после удаления
+    }
+  }
+});
+
+var eBEl=$("eB");
+if(eBEl)eBEl.addEventListener("input",function(e){
+  if(e.target.tagName==="INPUT"){
+    svE();
+    autoSave(); // автосохранение при редактировании
+  }
+});
+
+["mS","mA","mE","mN","mD","mL","mNotifyInput"].forEach(function(id){
+  $(id).addEventListener("click",function(e){if(e.target===this)clMo(id)})
+});
+
+$("iN").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
+$("iP").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
+$("iC").addEventListener("keydown",function(e){if(e.key==="Enter")tryA()});
 
 /* ===== Initial Render ===== */
 render();
@@ -652,23 +846,18 @@ try{
     console.log("User:",uid);setSC("c-ok","Онлайн");$("iBtn").classList.add("sh");
     if(Notification&&Notification.permission==="default")Notification.requestPermission();
 
-    // Load current + next week
     ldWk(tod,function(){console.log("Current week loaded");render()});
     var nw=new Date(tod);nw.setDate(nw.getDate()+7);
     ldWk(nw,function(){console.log("Next week loaded");render()});
 
-    // Bookings listener
     db.ref("bookings").on("value",function(s){bk=s.val()||{};render()},
       function(e){console.error("bk err:",e);setSC("c-er","Ошибка")});
-
-    // Admin listener
+    db.ref("waitlist").on("value",function(s){waitlist=s.val()||{};render()});
     db.ref("admins/"+uid).on("value",function(s){
       isA=s.val()===true;
       $("badge").style.display=isA?"inline-block":"none";
       $("ap").style.display=isA?"block":"none";render()
     });
-
-    // Week overrides listener (loads ALL saved weeks)
     db.ref("weekOverrides").on("value",function(s){
       var raw=s.val();
       console.log("weekOverrides received:",raw);
@@ -683,7 +872,8 @@ try{
       }
       render()
     },function(e){console.error("weekOverrides err:",e)});
-
+    
+    listenAdminNotifications();
     setInterval(cNtf,30000);setTimeout(cNtf,2000)
   })
 }catch(e){console.error("FB err:",e);setSC("c-er","Ошибка")}
