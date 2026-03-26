@@ -205,15 +205,34 @@ var uid=null,isA=false,bk={},waitlist={},db=null;
 var wC={},nwS=new Set(),alerts=[];
 var tod=new Date(),vd=new Date(tod),sm="w";
 var edD=null,edSch=[],pS=null;
-var saveTimeout=null; // для автосохранения
+var saveTimeout=null;
 
 /* ===== Helpers ===== */
 function $(i){return document.getElementById(i)}
 function E(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
 function S2(n){return n<10?"0"+n:""+n}
-function Fd(d){return d.getFullYear()+"-"+S2(d.getMonth()+1)+"-"+S2(d.getDate())}
-function PD(s){return new Date(s+"T00:00:00")}
-function gM(d){var r=new Date(d),w=r.getDay();r.setDate(r.getDate()-((w+6)%7));r.setHours(0,0,0,0);return r}
+function Fd(d){
+  if(!(d instanceof Date) || isNaN(d.getTime())) return "0000-00-00";
+  return d.getFullYear()+"-"+S2(d.getMonth()+1)+"-"+S2(d.getDate());
+}
+function PD(s){
+  if(!s || typeof s !== 'string') return new Date(NaN);
+  var parts = s.split('-');
+  if(parts.length !== 3) return new Date(NaN);
+  var y = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10) - 1;
+  var d = parseInt(parts[2], 10);
+  if(isNaN(y) || isNaN(m) || isNaN(d)) return new Date(NaN);
+  return new Date(y, m, d);
+}
+function gM(d){
+  var r=new Date(d);
+  if(isNaN(r.getTime())) r=new Date();
+  var w=r.getDay();
+  r.setDate(r.getDate()-((w+6)%7));
+  r.setHours(0,0,0,0);
+  return r;
+}
 function wK(d){return Fd(gM(d))}
 function gid(){return "x"+Date.now()+"_"+Math.random().toString(36).substr(2,5)}
 
@@ -233,7 +252,7 @@ function mkEmpty(){
   ]
 }
 
-/* ===== Seed empty weeks for calendar display ===== */
+/* ===== Seed empty weeks ===== */
 (function(){
   var mon=gM(tod);
   for(var i=-3;i<10;i++){
@@ -252,7 +271,6 @@ function togT(){var d=document.documentElement.hasAttribute("data-theme");
 aTB();
 
 /* ===== Week Data from Firebase ===== */
-
 function parseWeek(raw){
   if(!raw)return null;
   var result=[];
@@ -266,7 +284,6 @@ function parseWeek(raw){
   }
   return result
 }
-
 function parseCls(raw){
   if(!raw)return[];
   if(Array.isArray(raw)){
@@ -285,7 +302,6 @@ function parseCls(raw){
   }
   return r2
 }
-
 function prepForSave(sch){
   var out={};
   for(var i=0;i<sch.length;i++){
@@ -293,7 +309,6 @@ function prepForSave(sch){
   }
   return out
 }
-
 function ldWk(d,cb){
   var k=wK(d);
   if(nwS.has(k)){console.log("Already loaded:",k);if(cb)cb();return}
@@ -316,11 +331,11 @@ function ldWk(d,cb){
     if(cb)cb()
   })
 }
-
 function gWC(d){
   var k=wK(d);
   if(!wC[k]){return null}
   var base=PD(k);
+  if(isNaN(base.getTime())) return null;
   var result=[];
   for(var i=0;i<wC[k].length;i++){
     var di=wC[k][i];
@@ -329,13 +344,11 @@ function gWC(d){
   }
   return result
 }
-
 function gCD(week,ds){
   if(!week)return null;
   for(var i=0;i<week.length;i++)if(week[i].date===ds)return week[i];
   return null
 }
-
 function hasScheduleOnDate(ds){
   var week = gWC(PD(ds));
   if(!week) return false;
@@ -343,15 +356,12 @@ function hasScheduleOnDate(ds){
   if(!day) return false;
   return day.cls && day.cls.length > 0;
 }
-
 function hWk(k){
   if(!wC[k])return false;
   for(var i=0;i<wC[k].length;i++)if(wC[k][i].cls&&wC[k][i].cls.length>0)return true;
   return false
 }
-
 function hW(d){return hWk(wK(d))}
-
 function hB(ds){
   if(!uid) return false;
   var week=gWC(PD(ds));if(!week)return false;
@@ -381,26 +391,22 @@ function render(){
   if(uid)$("iBtn").classList.add("sh");else $("iBtn").classList.remove("sh");
   updUI()
 }
-
 function rCal(){
   var h=bMo(tod.getFullYear(),tod.getMonth());
   var nm=tod.getMonth()===11?{y:tod.getFullYear()+1,m:0}:{y:tod.getFullYear(),m:tod.getMonth()+1};
   h+=bMo(nm.y,nm.m);$("cal").innerHTML=h
 }
-
 function bMo(y,m){
   var firstDay = new Date(y, m, 1);
   var lastDay = new Date(y, m+1, 0);
   var daysInMonth = lastDay.getDate();
   var startWeekday = firstDay.getDay();
   var offset = startWeekday === 0 ? 6 : startWeekday - 1;
-  
-  var h='<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl"><tr>';
+  var h='<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl">';
   for(var i=0;i<7;i++)h+="<th>"+WDs[i]+"</th>";
   h+="</tr>";
   var dayCounter = 1;
   var today = new Date(tod.setHours(0,0,0,0));
-  
   for(var row=0; row<6; row++) {
     h+="<tr>";
     for(var col=0; col<7; col++) {
@@ -417,11 +423,9 @@ function bMo(y,m){
       var isBooked = !isPast && hB(ds);
       var isToday = ds === Fd(tod);
       var isSelected = (sm==="d" && ds===Fd(vd));
-      
       var c="cd";
-      if(isPast) {
-        c+=" gh";
-      } else {
+      if(isPast) c+=" gh";
+      else {
         if(isToday) c+=" tday";
         if(isSelected) c+=" soy";
         if(hasSchedule) c+=" has-schedule";
@@ -437,7 +441,6 @@ function bMo(y,m){
   h+="</table></div>";
   return h;
 }
-
 function rSch(){
   var h=rShd();
   if(sm==="d"){h+=rDay(Fd(vd))}
@@ -446,7 +449,6 @@ function rSch(){
     else{ldWk(vd,function(){render()});h+='<div class="nc">Загрузка...</div>'}}
   $("sc").innerHTML=h
 }
-
 function rShd(){
   var h='<div class="shd">';
   if(sm==="d"){var dd=PD(Fd(vd));
@@ -458,13 +460,11 @@ function rShd(){
     h+='<button class="wb" onclick="nvg(7)">&#9654;</button>'}
   h+="</div>";return h
 }
-
 function rDay(ds){
   var week=gWC(PD(ds));
   if(!week){ldWk(PD(ds),function(){render()});return'<div class="nc">Загрузка...</div>'}
   var day=gCD(week,ds);if(!day)return'<div class="nc">Нет данных</div>';return rDD(day)
 }
-
 function rDD(day){
   var dd=PD(day.date),dayName=WD[dd.getDay()],dateStr=day.date.split("-").reverse().join(".");
   var h='<div class="dy"><div class="dyhd">'+E(dayName)+' <span class="d2">('+dateStr+')</span></div>';
@@ -472,14 +472,12 @@ function rDD(day){
   else for(var i=0;i<day.cls.length;i++)h+=rSl(day.cls[i],day.date);
   h+="</div>";return h
 }
-
 function rSl(s,ds){
   var sid=s.id+"_"+ds,e=bk[sid]||{};
   var ls=[];for(var k in e)if(e.hasOwnProperty(k))ls.push({u:k,n:e[k].name,p:e[k].phone||""});
   var mi=uid&&e[uid],fu=ls.length>=s.max;
   var wl = waitlist[sid] || {};
   var inWaitlist = uid && wl[uid];
-  
   var h='<div class="sl"><div class="sll"><div class="st">'+E(s.time)+" — "+E(s.name)+"</div><div class='sn'>";
   if(ls.length){
     h+="👥 ";
@@ -514,111 +512,130 @@ function rSl(s,ds){
   if(isA&&ls.length)h+='<button class="bclr" data-a="ac" data-s="'+sid+'">Очистить</button>';
   h+="</div></div>";return h
 }
-
 function showPhone(el){
   var phone = el.getAttribute("data-phone");
   if(phone) alert("Телефон: "+phone);
 }
 
-console.log("Render OK");
-
 /* ===== Schedule Editor ===== */
-function openSE(){edD=gM(vd);$("wP").value=Fd(edD);ldE();opMo("mE")}
-function pW(){var d=PD($("wP").value);d.setDate(d.getDate()-7);$("wP").value=Fd(d);ldE()}
-function nW(){var d=PD($("wP").value);d.setDate(d.getDate()+7);$("wP").value=Fd(d);ldE()}
-
-function ldE(){
-  var wd=PD($("wP").value+"T00:00:00");edD=gM(wd);
-  var k=Fd(edD);
-  console.log("Editor loading week:",k);
-  ldWk(wd,function(){
-    var ov=wC[k];
-    if(ov){
-      edSch=ov.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.map(function(c){
-        return{id:c.id,time:c.time,name:c.name,max:c.max}})}})
-    } else {
-      edSch=mkEmpty()
-    }
-    console.log("Editor loaded:",edSch.length,"days");
-    rET()
-  })
+function openSE(){
+  if(!vd || isNaN(vd.getTime())) vd = new Date(tod);
+  edD = gM(vd);
+  $("wP").value = Fd(edD);
+  ldE();
+  opMo("mE");
 }
-
+function pW(){
+  var d = PD($("wP").value);
+  if(isNaN(d.getTime())) return;
+  d.setDate(d.getDate()-7);
+  $("wP").value = Fd(d);
+  ldE();
+}
+function nW(){
+  var d = PD($("wP").value);
+  if(isNaN(d.getTime())) return;
+  d.setDate(d.getDate()+7);
+  $("wP").value = Fd(d);
+  ldE();
+}
+function ldE(){
+  var wd = PD($("wP").value);
+  if(isNaN(wd.getTime())) {
+    console.error("Invalid date in wP:", $("wP").value);
+    sAl("Ошибка даты в поле выбора недели");
+    return;
+  }
+  edD = gM(wd);
+  var k = Fd(edD);
+  console.log("Editor loading week:",k);
+  ldWk(wd, function(){
+    var ov = wC[k];
+    if(ov){
+      edSch = ov.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.map(function(c){
+        return{id:c.id,time:c.time,name:c.name,max:c.max}
+      })}});
+    } else {
+      edSch = mkEmpty();
+    }
+    console.log("Editor loaded:", edSch.length, "days");
+    rET();
+  });
+}
 function rET(){
   var h='<table class="et"><tr><th style="width:90px">День</th><th>Время</th><th>Занятие</th><th style="width:50px">Макс</th><th style="width:25px"></th></tr>';
   for(var di=0;di<edSch.length;di++){
     var day=edSch[di];
     for(var ci=0;ci<day.cls.length;ci++){
       var s=day.cls[ci];
-      h+='<tr><td style="font-weight:600;vertical-align:top;padding-top:5px">'+(ci===0?E(day.day):"")+"</td>";
+      h+='<tr><td style="font-weight:600;vertical-align:top;padding-top:5px">'+(ci===0?E(day.day):"")+'</td>';
       h+='<td><input type="time" data-d="'+di+'" data-c="'+ci+'" data-f="time" value="'+s.time+'"></td>';
       h+='<td><input type="text" data-d="'+di+'" data-c="'+ci+'" data-f="name" value="'+E(s.name)+'"></td>';
       h+='<td><input type="number" data-d="'+di+'" data-c="'+ci+'" data-f="max" value="'+s.max+'" min="1" max="99"></td>';
-      h+='<td><button class="bdel" data-a="dc" data-d="'+di+'" data-c="'+ci+'" style="font-size:14px">✖</button></td></tr>'
+      h+='<td><button class="bdel" data-a="dc" data-d="'+di+'" data-c="'+ci+'" style="font-size:14px">✖</button></td></tr>';
     }
-    h+='<tr><td>'+(day.cls.length===0?E(day.day):"")+'</td><td colspan="4"><button class="b bg" data-a="ac2" data-d="'+di+'" style="font-size:10px;padding:2px 6px">+ Добавить</button></td></tr>'
+    h+='<tr><td>'+(day.cls.length===0?E(day.day):"")+'</td><td colspan="4"><button class="b bg" data-a="ac2" data-d="'+di+'" style="font-size:10px;padding:2px 6px">+ Добавить</button></td></tr>';
   }
-  h+='</table>';$("eB").innerHTML=h
+  h+='</table>';$("eB").innerHTML=h;
 }
-
 function svE(){
   var ins=$("eB").querySelectorAll("input");
   for(var i=0;i<ins.length;i++){
     var inp=ins[i],di=+inp.dataset.d,ci=+inp.dataset.c,f=inp.dataset.f;
     if(edSch[di]&&edSch[di].cls[ci])
-      edSch[di].cls[ci][f]=f==="max"?Math.max(1,+inp.value||10):inp.value
+      edSch[di].cls[ci][f]=f==="max"?Math.max(1,+inp.value||10):inp.value;
   }
 }
-
 function autoSave(){
   if(saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(function(){
-    if(isA && db && edD){
-      svW();
-    }
+    if(isA && db && edD && !isNaN(edD.getTime())) svW();
   }, 1000);
 }
-
 function svW(){
-  if(!isA||!db)return;svE();
-  var k=Fd(edD);
+  if(!isA||!db) return;
+  svE();
+  var k = Fd(edD);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) {
+    console.error("Invalid date for saving:", edD, k);
+    sAl("Ошибка: некорректная дата");
+    return;
+  }
   console.log("Saving week:",k);
-  var toSave=prepForSave(edSch);
-  console.log("Prepared:",JSON.stringify(toSave));
-  db.ref("weekOverrides/"+k).set(toSave,function(e){
+  var toSave = prepForSave(edSch);
+  console.log("Prepared:", JSON.stringify(toSave));
+  db.ref("weekOverrides/"+k).set(toSave, function(e){
     if(e){
       console.error("Save error:",e);
-      sAl("Ошибка: "+e.message)
+      sAl("Ошибка: "+e.message);
     } else {
       console.log("Saved OK:",k);
-      wC[k]=edSch.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.slice()}});
+      wC[k] = edSch.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.slice()}});
       nwS.add(k);
       render();
-      // Не закрываем редактор, чтобы можно было продолжить редактирование
     }
-  })
+  });
 }
-
 function cpP(){
-  var d=new Date(edD);d.setDate(d.getDate()-7);
-  var pk=Fd(d);
-  ldWk(d,function(){
-    var prev=wC[pk];
-    edSch=prev?prev.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.map(function(c){
-      return{id:gid(),time:c.time,name:c.name,max:c.max}})}}):mkEmpty();
+  var d = new Date(edD);
+  if(isNaN(d.getTime())) return;
+  d.setDate(d.getDate()-7);
+  var pk = Fd(d);
+  ldWk(d, function(){
+    var prev = wC[pk];
+    edSch = prev ? prev.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.map(function(c){
+      return{id:gid(),time:c.time,name:c.name,max:c.max}
+    })}}) : mkEmpty();
     rET();
     autoSave();
-  })
+  });
 }
-
 function clW(){
-  if(!confirm("Очистить все занятия на эту неделю?"))return;
-  for(var i=0;i<edSch.length;i++)edSch[i].cls=[];
+  if(!confirm("Очистить все занятия на эту неделю?")) return;
+  for(var i=0;i<edSch.length;i++) edSch[i].cls = [];
   rET();
   autoSave();
 }
-
-console.log("Editor OK");
 
 /* ===== Booking & Waitlist ===== */
 function openSg(sid){
@@ -632,7 +649,6 @@ function openSg(sid){
     pS=sid;$("iN").value=fn||"";$("iP").value=fp||"";opMo("mS")
   }
 }
-
 function doSg(){
   var n=$("iN").value.trim(),p=$("iP").value.trim();
   if(!n){sAl("Введите имя");return}
@@ -642,17 +658,14 @@ function doSg(){
   localStorage.setItem("fn",n);localStorage.setItem("fp",p);updUI();
   db.ref("bookings/"+pS+"/"+uid).set({name:n,phone:p,t:firebase.database.ServerValue.TIMESTAMP});clMo("mS")
 }
-
 function doCa(sid){if(!uid||!db)return;
   sCo("Отменить запись на это занятие?",function(){db.ref("bookings/"+sid+"/"+uid).remove()})}
-
 function addToWaitlist(sid){
   if(!uid||!db)return;
   var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
   if(!fn){sAl("Сначала укажите имя и фамилию");return;}
   db.ref("waitlist/"+sid+"/"+uid).set({name:fn,phone:fp||"",t:firebase.database.ServerValue.TIMESTAMP});
 }
-
 function cancelWaitlist(sid){
   if(!uid||!db)return;
   sCo("Удалить из резерва?",function(){db.ref("waitlist/"+sid+"/"+uid).remove()});
@@ -738,7 +751,7 @@ function showNM(){
 }
 function sBN(t,b){if(Notification&&Notification.permission==="granted")try{new Notification(t,{body:b,silent:true})}catch(e){}}
 
-/* ===== Notifications for clients (time-based) ===== */
+/* ===== Notifications for clients ===== */
 function cNtf(){
   var now=new Date(),ds=Fd(now),week=gWC(now);if(!week)return;
   var ns=JSON.parse(localStorage.getItem("ns")||"{}"),tb=[];
@@ -761,7 +774,7 @@ function sAl(msg){$("lTx").textContent=msg;opMo("mL");$("lOk").onclick=function(
 function opMo(id){$(id).classList.add("sh")}
 function clMo(id){$(id).classList.remove("sh")}
 
-/* ===== Navigation restrictions ===== */
+/* ===== Navigation ===== */
 function nvg(days){
   var newDate=new Date(vd);
   newDate.setDate(vd.getDate()+days);
@@ -783,11 +796,12 @@ document.addEventListener("click",function(e){
   var ce=e.target.closest(".cd[data-d]");
   if(ce){
     var selectedDate=PD(ce.dataset.d);
+    if(isNaN(selectedDate.getTime())) return;
     if(selectedDate < new Date(tod.setHours(0,0,0,0))){
       sAl("Нельзя выбрать прошедшую дату");
       return;
     }
-    sm="d";vd=selectedDate;render();return
+    sm="d"; vd=selectedDate; render(); return;
   }
   var el=e.target.closest("[data-a]");
   if(!el)return;var a=el.dataset.a,sid=el.dataset.s;
@@ -802,7 +816,7 @@ document.addEventListener("click",function(e){
     svE();
     edSch[di2].cls.push({id:gid(),time:"10:00",name:"Занятие",max:15});
     rET();
-    autoSave(); // автосохранение после добавления
+    autoSave();
   }
   else if(a==="dc"){
     if(confirm("Удалить это занятие?")){
@@ -810,53 +824,47 @@ document.addEventListener("click",function(e){
       svE();
       edSch[di3].cls.splice(ci3,1);
       rET();
-      autoSave(); // автосохранение после удаления
+      autoSave();
     }
   }
 });
-
 var eBEl=$("eB");
 if(eBEl)eBEl.addEventListener("input",function(e){
   if(e.target.tagName==="INPUT"){
     svE();
-    autoSave(); // автосохранение при редактировании
+    autoSave();
   }
 });
-
 ["mS","mA","mE","mN","mD","mL","mNotifyInput"].forEach(function(id){
   $(id).addEventListener("click",function(e){if(e.target===this)clMo(id)})
 });
-
 $("iN").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
 $("iP").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
 $("iC").addEventListener("keydown",function(e){if(e.key==="Enter")tryA()});
 
 /* ===== Initial Render ===== */
 render();
-console.log("Initial render OK");
 
 /* ===== Firebase ===== */
 try{
   firebase.initializeApp(FC);
-  var auth=firebase.auth();db=firebase.database();
+  var auth=firebase.auth(); db=firebase.database();
   console.log("Firebase init OK");
   auth.signInAnonymously().catch(function(e){console.error("Auth err:",e);setSC("c-er","Ошибка")});
   auth.onAuthStateChanged(function(user){
-    if(!user)return;uid=user.uid;
-    console.log("User:",uid);setSC("c-ok","Онлайн");$("iBtn").classList.add("sh");
-    if(Notification&&Notification.permission==="default")Notification.requestPermission();
-
-    ldWk(tod,function(){console.log("Current week loaded");render()});
-    var nw=new Date(tod);nw.setDate(nw.getDate()+7);
-    ldWk(nw,function(){console.log("Next week loaded");render()});
-
-    db.ref("bookings").on("value",function(s){bk=s.val()||{};render()},
-      function(e){console.error("bk err:",e);setSC("c-er","Ошибка")});
+    if(!user)return; uid=user.uid;
+    console.log("User:",uid); setSC("c-ok","Онлайн"); $("iBtn").classList.add("sh");
+    if(Notification&&Notification.permission==="default") Notification.requestPermission();
+    ldWk(tod,function(){render()});
+    var nw=new Date(tod); nw.setDate(nw.getDate()+7);
+    ldWk(nw,function(){render()});
+    db.ref("bookings").on("value",function(s){bk=s.val()||{};render()}, function(e){console.error("bk err:",e);setSC("c-er","Ошибка")});
     db.ref("waitlist").on("value",function(s){waitlist=s.val()||{};render()});
     db.ref("admins/"+uid).on("value",function(s){
       isA=s.val()===true;
       $("badge").style.display=isA?"inline-block":"none";
-      $("ap").style.display=isA?"block":"none";render()
+      $("ap").style.display=isA?"block":"none";
+      render();
     });
     db.ref("weekOverrides").on("value",function(s){
       var raw=s.val();
@@ -866,20 +874,21 @@ try{
       console.log("Week keys:",keys);
       for(var i=0;i<keys.length;i++){
         var k=keys[i];
-        nwS.add(k);
-        wC[k]=parseWeek(raw[k]);
-        console.log("Parsed week",k,":",wC[k])
+        if(/^\d{4}-\d{2}-\d{2}$/.test(k)){
+          nwS.add(k);
+          wC[k]=parseWeek(raw[k]);
+          console.log("Parsed week",k,":",wC[k]);
+        } else {
+          console.warn("Invalid week key ignored:", k);
+        }
       }
-      render()
+      render();
     },function(e){console.error("weekOverrides err:",e)});
-    
     listenAdminNotifications();
-    setInterval(cNtf,30000);setTimeout(cNtf,2000)
-  })
+    setInterval(cNtf,30000); setTimeout(cNtf,2000);
+  });
 }catch(e){console.error("FB err:",e);setSC("c-er","Ошибка")}
-
 function setSC(c,t){var el=$("cs");el.textContent=t;el.className="cs "+c}
-
 console.log("=== APP READY ===");
 </script>
 </body>
