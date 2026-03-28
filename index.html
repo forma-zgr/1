@@ -48,7 +48,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .bg{background:var(--g);color:#fff}.br{background:var(--r);color:#fff}
 .b-blue{background:var(--blue);color:#fff}
 .bdel{background:none;color:var(--t3);border:none;cursor:pointer;font-size:13px;padding:1px 2px}.bdel:hover{color:var(--r)}
-.bclr{background:var(--r);color:#fff;border:none;cursor:pointer;font-size:10px;padding:2px 5px;border-radius:3px;opacity:.7}.bclr:hover{opacity:1}
 .phone-icon{cursor:pointer;margin-left:4px;font-size:10px;opacity:0.6}.phone-icon:hover{opacity:1}
 
 .cb{background:var(--c);border-radius:10px;padding:10px;box-shadow:var(--sh);margin-bottom:10px}
@@ -84,8 +83,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .et input:focus{border-color:var(--g)}
 
 .nl{max-height:300px;overflow-y:auto;font-size:12px;color:var(--t2)}
-.ni{padding:8px 0;border-bottom:1px solid var(--bd)}.ni:last-child{border-bottom:none}
+.ni{padding:8px 0;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center}
 .ni .nm{font-weight:600;color:var(--t)}.ni .nt{font-size:10px;color:var(--t3);margin-top:2px}
+.ni .ndel{cursor:pointer;color:var(--r);font-size:14px;padding:0 5px;display:none}
+.ni .ndel:hover{opacity:0.7}
+.admin-mode .ni .ndel{display:inline-block}
 
 @keyframes flashG{0%{background:var(--gbg)}100%{background:transparent}}
 .flash{animation:flashG 1.2s ease-out}
@@ -402,7 +404,7 @@ function bMo(y,m){
   var daysInMonth = lastDay.getDate();
   var startWeekday = firstDay.getDay();
   var offset = startWeekday === 0 ? 6 : startWeekday - 1;
-  var h='<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl">';
+  var h='<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl"><tr>';
   for(var i=0;i<7;i++)h+="<th>"+WDs[i]+"</th>";
   h+="</tr>";
   var dayCounter = 1;
@@ -419,12 +421,13 @@ function bMo(y,m){
       var ds = y+"-"+S2(m+1)+"-"+S2(cellDay);
       var currentDate = new Date(ds);
       var isPast = currentDate < today;
-      var hasSchedule = !isPast && hasScheduleOnDate(ds);
-      var isBooked = !isPast && hB(ds);
+      var canSelect = isA ? true : !isPast;
+      var hasSchedule = canSelect && hasScheduleOnDate(ds);
+      var isBooked = canSelect && hB(ds);
       var isToday = ds === Fd(tod);
       var isSelected = (sm==="d" && ds===Fd(vd));
       var c="cd";
-      if(isPast) c+=" gh";
+      if(isPast && !isA) c+=" gh";
       else {
         if(isToday) c+=" tday";
         if(isSelected) c+=" soy";
@@ -432,6 +435,7 @@ function bMo(y,m){
         if(isBooked) c+=" booked";
         if(!hasSchedule && !isBooked && !isToday && !isSelected) c+=" oy";
       }
+      if(isPast && isA && !isSelected) c="cd oy";
       h+='<td><span class="'+c+'" data-d="'+ds+'">'+cellDay+'</span></td>';
       dayCounter++;
     }
@@ -472,12 +476,38 @@ function rDD(day){
   else for(var i=0;i<day.cls.length;i++)h+=rSl(day.cls[i],day.date);
   h+="</div>";return h
 }
+
+// Сортировка по времени (timestamp)
+function sortByTime(arr){
+  return arr.sort(function(a,b){
+    var ta = a.t || 0;
+    var tb = b.t || 0;
+    return ta - tb;
+  });
+}
+
 function rSl(s,ds){
   var sid=s.id+"_"+ds,e=bk[sid]||{};
-  var ls=[];for(var k in e)if(e.hasOwnProperty(k))ls.push({u:k,n:e[k].name,p:e[k].phone||""});
-  var mi=uid&&e[uid],fu=ls.length>=s.max;
+  var ls = [];
+  for(var k in e){
+    if(e.hasOwnProperty(k)){
+      ls.push({u:k, n:e[k].name, p:e[k].phone||"", t:e[k].t||0});
+    }
+  }
+  ls = sortByTime(ls);
+  var mi = uid && e[uid] ? true : false;
+  var fu = ls.length >= s.max;
+  
   var wl = waitlist[sid] || {};
-  var inWaitlist = uid && wl[uid];
+  var wlArr = [];
+  for(var wu in wl){
+    if(wl.hasOwnProperty(wu)){
+      wlArr.push({u:wu, n:wl[wu].name, p:wl[wu].phone||"", t:wl[wu].t||0});
+    }
+  }
+  wlArr = sortByTime(wlArr);
+  var inWaitlist = uid && wl[uid] ? true : false;
+  
   var h='<div class="sl"><div class="sll"><div class="st">'+E(s.time)+" — "+E(s.name)+"</div><div class='sn'>";
   if(ls.length){
     h+="👥 ";
@@ -487,12 +517,20 @@ function rSl(s,ds){
       if(isA && ls[i].p){
         h+=' <span class="phone-icon" title="Телефон" data-phone="'+E(ls[i].p)+'" onclick="showPhone(this)">📞</span>';
       }
+      if(isA){
+        h+=' <button class="bdel" data-a="ar" data-s="'+sid+'" data-u="'+ls[i].u+'">✖</button>';
+      }
     }
-  } else h+="Пока никто не записался";
-  if(isA && Object.keys(wl).length){
+  } else {
+    h+="Пока никто не записался";
+  }
+  // Резервный список – показываем всем, не только админу
+  if(wlArr.length){
     h+="<br><span style='font-size:10px;color:var(--blue)'>Резерв: ";
     var wlNames=[];
-    for(var wu in wl)if(wl[wu].name)wlNames.push(E(wl[wu].name));
+    for(var i=0;i<wlArr.length;i++){
+      wlNames.push(E(wlArr[i].n));
+    }
     h+=wlNames.join(", ")+"</span>";
   }
   h+='</div></div><div class="slr"><span class="ct">'+ls.length+"/"+s.max+"</span>";
@@ -509,15 +547,65 @@ function rSl(s,ds){
       h+='<button class="b b-blue" data-a="addWait" data-s="'+sid+'">Добавить в резерв</button>';
     }
   }
-  if(isA&&ls.length)h+='<button class="bclr" data-a="ac" data-s="'+sid+'">Очистить</button>';
-  h+="</div></div>";return h
+  h+="</div></div>";
+  return h;
 }
 function showPhone(el){
   var phone = el.getAttribute("data-phone");
   if(phone) alert("Телефон: "+phone);
 }
 
-/* ===== Schedule Editor ===== */
+// Перемещение первого из резерва в основной список
+function promoteFromWaitlist(sid){
+  if(!db) return;
+  var wlRef = db.ref("waitlist/"+sid);
+  wlRef.once("value", function(snap){
+    var wl = snap.val();
+    if(!wl) return;
+    var entries = [];
+    for(var k in wl){
+      if(wl.hasOwnProperty(k)){
+        entries.push({uid: k, data: wl[k]});
+      }
+    }
+    if(entries.length === 0) return;
+    entries.sort(function(a,b){
+      return (a.data.t || 0) - (b.data.t || 0);
+    });
+    var first = entries[0];
+    var bookingRef = db.ref("bookings/"+sid+"/"+first.uid);
+    bookingRef.set({
+      name: first.data.name,
+      phone: first.data.phone || "",
+      t: firebase.database.ServerValue.TIMESTAMP
+    }, function(err){
+      if(err){
+        console.error("Promote error:", err);
+      } else {
+        wlRef.child(first.uid).remove();
+        sendPromotionNotification(first.uid, sid, first.data.name);
+      }
+    });
+  });
+}
+
+function sendPromotionNotification(userId, sid, userName){
+  if(!db) return;
+  db.ref("userNotifications/"+userId).push({
+    message: "Вы были перемещены из резерва в основную запись на занятие!",
+    timestamp: firebase.database.ServerValue.TIMESTAMP,
+    sid: sid
+  });
+  if(Notification && Notification.permission === "granted"){
+    new Notification("Запись подтверждена", {
+      body: userName+", вы записаны на занятие!",
+      silent: true
+    });
+  }
+  aAl("Вы записаны на занятие из резерва!");
+}
+
+/* ===== Schedule Editor (без изменений, иероглифы удалены) ===== */
 function openSE(){
   if(!vd || isNaN(vd.getTime())) vd = new Date(tod);
   edD = gM(vd);
@@ -658,8 +746,14 @@ function doSg(){
   localStorage.setItem("fn",n);localStorage.setItem("fp",p);updUI();
   db.ref("bookings/"+pS+"/"+uid).set({name:n,phone:p,t:firebase.database.ServerValue.TIMESTAMP});clMo("mS")
 }
-function doCa(sid){if(!uid||!db)return;
-  sCo("Отменить запись на это занятие?",function(){db.ref("bookings/"+sid+"/"+uid).remove()})}
+function doCa(sid){
+  if(!uid||!db) return;
+  sCo("Отменить запись на это занятие?", function(){
+    db.ref("bookings/"+sid+"/"+uid).remove(function(){
+      promoteFromWaitlist(sid);
+    });
+  });
+}
 function addToWaitlist(sid){
   if(!uid||!db)return;
   var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
@@ -690,15 +784,32 @@ function tryA(){
         $("badge").style.display="inline-block";
         $("ap").style.display="block";
         render();
+        // добавляем класс admin-mode для отображения кнопок удаления уведомлений
+        document.body.classList.add("admin-mode");
       }
     });
   } else {
     sAl("Неверный код!");
   }
 }
-function exA(){if(!uid||!db)return;sCo("Выйти из режима администратора?",function(){db.ref("admins/"+uid).remove()})}
-function aR(sid,tu){if(!isA)return;sCo("Удалить запись?",function(){db.ref("bookings/"+sid+"/"+tu).remove()})}
-function aC(sid){if(!isA)return;sCo("Удалить ВСЕ записи?",function(){db.ref("bookings/"+sid).remove()})}
+function exA(){if(!uid||!db)return;sCo("Выйти из режима администратора?",function(){
+  db.ref("admins/"+uid).remove();
+  document.body.classList.remove("admin-mode");
+})}
+function aR(sid,tu){
+  if(!isA) return;
+  sCo("Удалить запись?", function(){
+    db.ref("bookings/"+sid+"/"+tu).remove(function(){
+      promoteFromWaitlist(sid);
+    });
+  });
+}
+function aC(sid){
+  if(!isA) return;
+  sCo("Удалить ВСЕ записи?", function(){
+    db.ref("bookings/"+sid).remove();
+  });
+}
 
 /* ===== Admin Notifications ===== */
 function sendAdminNotification(){
@@ -722,18 +833,19 @@ function sendNotificationToAll(){
 }
 function listenAdminNotifications(){
   if(!db)return;
-  db.ref("adminNotifications").orderByChild("timestamp").limitToLast(20).on("child_added",function(snap){
+  db.ref("adminNotifications").orderByChild("timestamp").limitToLast(50).on("child_added",function(snap){
     var data=snap.val();
     var msg=data.message;
+    var id=snap.key;
     if(Notification && Notification.permission==="granted"){
       new Notification("Уведомление",{body:msg,silent:true});
     }
-    aAl(msg);
+    aAl(msg, id);
   });
 }
-function aAl(msg){
-  if(alerts.length && alerts[alerts.length-1].message===msg) return;
-  alerts.push({message:msg,time:Date.now()});
+function aAl(msg, id){
+  if(alerts.length && alerts[alerts.length-1].message===msg && alerts[alerts.length-1].id===id) return;
+  alerts.push({message:msg, time:Date.now(), id:id});
   $("bdot").style.display="block";
 }
 function showNM(){
@@ -742,29 +854,73 @@ function showNM(){
   else{
     var rev=alerts.slice().reverse();
     for(var i=0;i<rev.length;i++){
-      h+='<div class="ni"><div class="nm">'+E(rev[i].message)+'</div><div class="nt">'+new Date(rev[i].time).toLocaleString("ru")+'</div></div>';
+      var notif=rev[i];
+      h+='<div class="ni" data-id="'+notif.id+'"><div class="nm">'+E(notif.message)+'</div><div class="nt">'+new Date(notif.time).toLocaleString("ru")+'</div>';
+      if(isA && notif.id){
+        h+='<span class="ndel" onclick="deleteNotification(\''+notif.id+'\')">🗑️</span>';
+      }
+      h+='</div>';
     }
   }
   $("nL").innerHTML=h;
   opMo("mN");
   $("bdot").style.display="none";
 }
+function deleteNotification(notifId){
+  if(!isA || !db) return;
+  db.ref("adminNotifications/"+notifId).remove().then(()=>{
+    // удалить из локального массива
+    alerts = alerts.filter(n=>n.id !== notifId);
+    showNM();
+  }).catch(e=>console.error(e));
+}
 function sBN(t,b){if(Notification&&Notification.permission==="granted")try{new Notification(t,{body:b,silent:true})}catch(e){}}
 
-/* ===== Notifications for clients ===== */
+/* ===== Notifications for clients (time-based) ===== */
 function cNtf(){
-  var now=new Date(),ds=Fd(now),week=gWC(now);if(!week)return;
-  var ns=JSON.parse(localStorage.getItem("ns")||"{}"),tb=[];
-  for(var di=0;di<week.length;di++){if(week[di].date===ds){
-    for(var ci=0;ci<week[di].cls.length;ci++){var s=week[di].cls[ci];
-      if(bk[s.id+"_"+ds]&&bk[s.id+"_"+ds][uid])tb.push(s)}}}
-  if(!tb.length)return;
-  if(now.getHours()===10&&now.getMinutes()<2){var k="m10_"+ds;if(!ns[k]){ns[k]=1;localStorage.setItem("ns",JSON.stringify(ns));
-    var tx="Сегодня "+tb.length+" занятий";aAl(tx);sBN("Напоминание",tx)}}
-  for(var ti=0;ti<tb.length;ti++){var s=tb[ti],tp=s.time.split(":"),cl=new Date(now);
-    cl.setHours(+tp[0],+tp[1],0,0);var mB=(cl-now)/60000;
-    if(mB>=119.5&&mB<=120.5){var k="m2h_"+s.id+"_"+ds;if(!ns[k]){ns[k]=1;localStorage.setItem("ns",JSON.stringify(ns));
-      var tx="Через 2ч: "+s.time+" "+s.name;aAl(tx);sBN(s.time+" "+s.name,"Занятие через 2 часа!")}}}
+  var now=new Date();
+  var ds=Fd(now);
+  var week=gWC(now);
+  if(!week) return;
+  var ns=JSON.parse(localStorage.getItem("ns")||"{}");
+  var tb=[];
+  for(var di=0; di<week.length; di++){
+    if(week[di].date===ds){
+      for(var ci=0; ci<week[di].cls.length; ci++){
+        var s=week[di].cls[ci];
+        var sid = s.id+"_"+ds;
+        if(bk[sid] && bk[sid][uid]) tb.push(s);
+      }
+    }
+  }
+  if(tb.length === 0) return;
+  if(now.getHours()===10 && now.getMinutes()<2){
+    var k="m10_"+ds;
+    if(!ns[k]){
+      ns[k]=1;
+      localStorage.setItem("ns",JSON.stringify(ns));
+      var tx="Сегодня "+tb.length+" занятий";
+      aAl(tx);
+      sBN("Напоминание", tx);
+    }
+  }
+  for(var ti=0; ti<tb.length; ti++){
+    var s=tb[ti];
+    var tp=s.time.split(":");
+    var cl=new Date(now);
+    cl.setHours(+tp[0], +tp[1], 0, 0);
+    var mB = (cl - now)/60000;
+    if(mB >= 119.5 && mB <= 120.5){
+      var k="m2h_"+s.id+"_"+ds;
+      if(!ns[k]){
+        ns[k]=1;
+        localStorage.setItem("ns",JSON.stringify(ns));
+        var tx="Через 2ч: "+s.time+" "+s.name;
+        aAl(tx);
+        sBN(s.time+" "+s.name, "Занятие через 2 часа!");
+      }
+    }
+  }
 }
 
 /* ===== Dialogs ===== */
@@ -778,12 +934,6 @@ function clMo(id){$(id).classList.remove("sh")}
 function nvg(days){
   var newDate=new Date(vd);
   newDate.setDate(vd.getDate()+days);
-  var startOfCurrentWeek=gM(tod);
-  var startOfNewWeek=gM(newDate);
-  if(startOfNewWeek < startOfCurrentWeek){
-    sAl("Нельзя перейти на прошедшую неделю");
-    return;
-  }
   vd=newDate;
   var k=wK(vd);
   if(!nwS.has(k)&&db){ldWk(vd,function(){render()})}
@@ -797,7 +947,7 @@ document.addEventListener("click",function(e){
   if(ce){
     var selectedDate=PD(ce.dataset.d);
     if(isNaN(selectedDate.getTime())) return;
-    if(selectedDate < new Date(tod.setHours(0,0,0,0))){
+    if(!isA && selectedDate < new Date(tod.setHours(0,0,0,0))){
       sAl("Нельзя выбрать прошедшую дату");
       return;
     }
@@ -864,6 +1014,8 @@ try{
       isA=s.val()===true;
       $("badge").style.display=isA?"inline-block":"none";
       $("ap").style.display=isA?"block":"none";
+      if(isA) document.body.classList.add("admin-mode");
+      else document.body.classList.remove("admin-mode");
       render();
     });
     db.ref("weekOverrides").on("value",function(s){
