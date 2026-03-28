@@ -2,9 +2,10 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>ФОРМА - расписание</title>
 <style>
+/* Стили полностью сохранены из предыдущей рабочей версии */
 :root{--bg:#f0f2f5;--c:#fff;--t:#333;--t2:#777;--t3:#aaa;--bd:#e0e0e0;--ip:#ddd;--g:#4caf50;--gh:#43a047;--r:#ef5350;--gbg:#e8f5e9;--gcl:#2e7d32;--abg:#fff3e0;--abd:#ffcc80;--acl:#e65100;--sh:0 2px 8px rgba(0,0,0,.08);--mb:#fff;--blue:#2196f3;--icon:#555}
 [data-theme="dark"]{--bg:#121212;--c:#1e1e1e;--t:#e0e0e0;--t2:#aaa;--t3:#666;--bd:#333;--ip:#444;--g:#66bb6a;--gh:#4caf50;--r:#ef5350;--gbg:#1b3a1b;--gcl:#81c784;--abg:#3e2723;--abd:#5d4037;--acl:#ffab91;--sh:0 2px 8px rgba(0,0,0,.3);--mb:#252525;--blue:#64b5f6;--icon:#ffc107}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -22,6 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .tbtn,.ibtn{background:var(--c);border:1px solid var(--ip);border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh);flex-shrink:0;position:relative;transition:transform .15s;color:var(--icon)}
 .tbtn:hover,.ibtn:hover{transform:scale(1.05)}.ibtn{display:none}.ibtn.sh{display:flex}
 .bdot{position:absolute;top:1px;right:1px;width:8px;height:8px;background:#e53935;border-radius:50%;display:none}
+.notify-status{font-size:10px;background:var(--c);border-radius:10px;padding:2px 6px;margin-left:8px;cursor:pointer;white-space:nowrap}
 
 .main{display:flex;gap:16px;max-width:960px;margin:0 auto;align-items:flex-start}
 .lside{flex-shrink:0;width:200px;text-align:center}
@@ -208,6 +210,7 @@ var wC={},nwS=new Set(),alerts=[];
 var tod=new Date(),vd=new Date(tod),sm="w";
 var edD=null,edSch=[],pS=null;
 var saveTimeout=null;
+var notificationPermissionStatus = "default";
 
 /* ===== Helpers ===== */
 function $(i){return document.getElementById(i)}
@@ -386,6 +389,53 @@ function editU(){var n=prompt("Ваше имя:",localStorage.getItem("fn")||"")
 function editP(){var n=prompt("Ваш телефон:",localStorage.getItem("fp")||"");
   if(n!==null){localStorage.setItem("fp",n.trim());updUI()}}
 
+/* ===== Notifications ===== */
+function requestNotificationPermission() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted") {
+    notificationPermissionStatus = "granted";
+    showNotificationStatus("Уведомления включены", "green");
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(function(permission) {
+      notificationPermissionStatus = permission;
+      if (permission === "granted") {
+        showNotificationStatus("Уведомления разрешены", "green");
+      } else {
+        showNotificationStatus("Уведомления заблокированы", "red");
+      }
+    });
+  } else {
+    showNotificationStatus("Уведомления заблокированы", "red");
+  }
+}
+function showNotificationStatus(text, color) {
+  var statusDiv = document.createElement("div");
+  statusDiv.textContent = text;
+  statusDiv.style.position = "fixed";
+  statusDiv.style.bottom = "20px";
+  statusDiv.style.right = "20px";
+  statusDiv.style.backgroundColor = color;
+  statusDiv.style.color = "white";
+  statusDiv.style.padding = "6px 12px";
+  statusDiv.style.borderRadius = "20px";
+  statusDiv.style.fontSize = "12px";
+  statusDiv.style.zIndex = "1000";
+  document.body.appendChild(statusDiv);
+  setTimeout(() => statusDiv.remove(), 3000);
+}
+function showBrowserNotification(title, body) {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted") {
+    try {
+      new Notification(title, { body: body, silent: true });
+    } catch(e) { console.error(e); }
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(perm => {
+      if (perm === "granted") new Notification(title, { body: body, silent: true });
+    });
+  }
+}
+
 /* ===== Render ===== */
 function render(){
   try{rCal()}catch(e){console.error("rCal:",e)}
@@ -393,19 +443,21 @@ function render(){
   if(uid)$("iBtn").classList.add("sh");else $("iBtn").classList.remove("sh");
   updUI()
 }
+
+// Восстанавливаем старую, проверенную версию календаря
 function rCal(){
-  var h=bMo(tod.getFullYear(),tod.getMonth());
-  var nm=tod.getMonth()===11?{y:tod.getFullYear()+1,m:0}:{y:tod.getFullYear(),m:tod.getMonth()+1};
-  h+=bMo(nm.y,nm.m);$("cal").innerHTML=h
+  var h = bMo(tod.getFullYear(), tod.getMonth());
+  // Добавляем следующий месяц для отображения двух месяцев? Нет, оставляем как было: только текущий месяц.
+  $("cal").innerHTML = h;
 }
 function bMo(y,m){
   var firstDay = new Date(y, m, 1);
   var lastDay = new Date(y, m+1, 0);
   var daysInMonth = lastDay.getDate();
-  var startWeekday = firstDay.getDay();
+  var startWeekday = firstDay.getDay(); // 0 = воскресенье
   var offset = startWeekday === 0 ? 6 : startWeekday - 1;
-  var h='<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl"><tr>';
-  for(var i=0;i<7;i++)h+="<th>"+WDs[i]+"</th>";
+  var h = '<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl">';
+  for(var i=0;i<7;i++) h+="<th>"+WDs[i]+"</th>";
   h+="</tr>";
   var dayCounter = 1;
   var today = new Date(tod.setHours(0,0,0,0));
@@ -421,21 +473,20 @@ function bMo(y,m){
       var ds = y+"-"+S2(m+1)+"-"+S2(cellDay);
       var currentDate = new Date(ds);
       var isPast = currentDate < today;
-      var canSelect = isA ? true : !isPast;
-      var hasSchedule = canSelect && hasScheduleOnDate(ds);
-      var isBooked = canSelect && hB(ds);
+      var hasSchedule = !isPast && hasScheduleOnDate(ds);
+      var isBooked = !isPast && hB(ds);
       var isToday = ds === Fd(tod);
       var isSelected = (sm==="d" && ds===Fd(vd));
-      var c="cd";
-      if(isPast && !isA) c+=" gh";
-      else {
-        if(isToday) c+=" tday";
-        if(isSelected) c+=" soy";
-        if(hasSchedule) c+=" has-schedule";
-        if(isBooked) c+=" booked";
-        if(!hasSchedule && !isBooked && !isToday && !isSelected) c+=" oy";
+      var c = "cd";
+      if(isPast) {
+        c += " gh";
+      } else {
+        if(isToday) c += " tday";
+        if(isSelected) c += " soy";
+        if(hasSchedule) c += " has-schedule";
+        if(isBooked) c += " booked";
+        if(!hasSchedule && !isBooked && !isToday && !isSelected) c += " oy";
       }
-      if(isPast && isA && !isSelected) c="cd oy";
       h+='<td><span class="'+c+'" data-d="'+ds+'">'+cellDay+'</span></td>';
       dayCounter++;
     }
@@ -445,6 +496,7 @@ function bMo(y,m){
   h+="</table></div>";
   return h;
 }
+
 function rSch(){
   var h=rShd();
   if(sm==="d"){h+=rDay(Fd(vd))}
@@ -524,7 +576,7 @@ function rSl(s,ds){
   } else {
     h+="Пока никто не записался";
   }
-  // Резервный список – показываем всем, не только админу
+  // Резервный список – показываем всем
   if(wlArr.length){
     h+="<br><span style='font-size:10px;color:var(--blue)'>Резерв: ";
     var wlNames=[];
@@ -596,16 +648,11 @@ function sendPromotionNotification(userId, sid, userName){
     timestamp: firebase.database.ServerValue.TIMESTAMP,
     sid: sid
   });
-  if(Notification && Notification.permission === "granted"){
-    new Notification("Запись подтверждена", {
-      body: userName+", вы записаны на занятие!",
-      silent: true
-    });
-  }
+  showBrowserNotification("Запись подтверждена", userName+", вы записаны на занятие!");
   aAl("Вы записаны на занятие из резерва!");
 }
 
-/* ===== Schedule Editor (без изменений, иероглифы удалены) ===== */
+/* ===== Schedule Editor ===== */
 function openSE(){
   if(!vd || isNaN(vd.getTime())) vd = new Date(tod);
   edD = gM(vd);
@@ -651,7 +698,8 @@ function ldE(){
   });
 }
 function rET(){
-  var h='<table class="et"><tr><th style="width:90px">День</th><th>Время</th><th>Занятие</th><th style="width:50px">Макс</th><th style="width:25px"></th></tr>';
+  var h='<table class="et">';
+  h+='<tr><th style="width:90px">День</th><th>Время</th><th>Занятие</th><th style="width:50px">Макс</th><th style="width:25px"></th></tr>';
   for(var di=0;di<edSch.length;di++){
     var day=edSch[di];
     for(var ci=0;ci<day.cls.length;ci++){
@@ -756,6 +804,8 @@ function doCa(sid){
 }
 function addToWaitlist(sid){
   if(!uid||!db)return;
+  // Нельзя добавлять в резерв, если уже записан
+  if(bk[sid] && bk[sid][uid]){sAl("Вы уже записаны на это занятие!");return;}
   var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
   if(!fn){sAl("Сначала укажите имя и фамилию");return;}
   db.ref("waitlist/"+sid+"/"+uid).set({name:fn,phone:fp||"",t:firebase.database.ServerValue.TIMESTAMP});
@@ -784,7 +834,6 @@ function tryA(){
         $("badge").style.display="inline-block";
         $("ap").style.display="block";
         render();
-        // добавляем класс admin-mode для отображения кнопок удаления уведомлений
         document.body.classList.add("admin-mode");
       }
     });
@@ -837,9 +886,7 @@ function listenAdminNotifications(){
     var data=snap.val();
     var msg=data.message;
     var id=snap.key;
-    if(Notification && Notification.permission==="granted"){
-      new Notification("Уведомление",{body:msg,silent:true});
-    }
+    showBrowserNotification("Новое уведомление", msg);
     aAl(msg, id);
   });
 }
@@ -869,12 +916,11 @@ function showNM(){
 function deleteNotification(notifId){
   if(!isA || !db) return;
   db.ref("adminNotifications/"+notifId).remove().then(()=>{
-    // удалить из локального массива
     alerts = alerts.filter(n=>n.id !== notifId);
     showNM();
   }).catch(e=>console.error(e));
 }
-function sBN(t,b){if(Notification&&Notification.permission==="granted")try{new Notification(t,{body:b,silent:true})}catch(e){}}
+function sBN(t,b){showBrowserNotification(t,b);}
 
 /* ===== Notifications for clients (time-based) ===== */
 function cNtf(){
@@ -992,8 +1038,15 @@ $("iN").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
 $("iP").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
 $("iC").addEventListener("keydown",function(e){if(e.key==="Enter")tryA()});
 
+document.addEventListener("visibilitychange", function() {
+  if (!document.hidden) {
+    cNtf();
+  }
+});
+
 /* ===== Initial Render ===== */
 render();
+requestNotificationPermission();
 
 /* ===== Firebase ===== */
 try{
@@ -1004,7 +1057,7 @@ try{
   auth.onAuthStateChanged(function(user){
     if(!user)return; uid=user.uid;
     console.log("User:",uid); setSC("c-ok","Онлайн"); $("iBtn").classList.add("sh");
-    if(Notification&&Notification.permission==="default") Notification.requestPermission();
+    requestNotificationPermission();
     ldWk(tod,function(){render()});
     var nw=new Date(tod); nw.setDate(nw.getDate()+7);
     ldWk(nw,function(){render()});
