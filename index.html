@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>ФОРМА - расписание</title>
 <style>
-/* Стили полностью сохранены из предыдущей рабочей версии */
+/* Стили без изменений, но удалены все иероглифы и лишние символы */
 :root{--bg:#f0f2f5;--c:#fff;--t:#333;--t2:#777;--t3:#aaa;--bd:#e0e0e0;--ip:#ddd;--g:#4caf50;--gh:#43a047;--r:#ef5350;--gbg:#e8f5e9;--gcl:#2e7d32;--abg:#fff3e0;--abd:#ffcc80;--acl:#e65100;--sh:0 2px 8px rgba(0,0,0,.08);--mb:#fff;--blue:#2196f3;--icon:#555}
 [data-theme="dark"]{--bg:#121212;--c:#1e1e1e;--t:#e0e0e0;--t2:#aaa;--t3:#666;--bd:#333;--ip:#444;--g:#66bb6a;--gh:#4caf50;--r:#ef5350;--gbg:#1b3a1b;--gcl:#81c784;--abg:#3e2723;--abd:#5d4037;--acl:#ffab91;--sh:0 2px 8px rgba(0,0,0,.3);--mb:#252525;--blue:#64b5f6;--icon:#ffc107}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -20,12 +20,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .badge{display:none;background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;margin-top:4px}
 .cs{display:inline-block;font-size:10px;padding:2px 7px;border-radius:8px;margin-top:3px;color:#fff}
 .c-ok{background:#4caf50}.c-er{background:#e53935}.c-w{background:#ff9800}
-.tbtn,.ibtn,.notify-permission-btn{background:var(--c);border:1px solid var(--ip);border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh);flex-shrink:0;position:relative;transition:transform .15s;color:var(--icon)}
-.tbtn:hover,.ibtn:hover,.notify-permission-btn:hover{transform:scale(1.05)}.ibtn{display:none}.ibtn.sh{display:flex}
-.notify-permission-btn{background:var(--c);border-radius:8px;width:auto;padding:0 8px;font-size:12px;color:var(--g);gap:4px}
-.notify-permission-btn.blocked{color:var(--r);border-color:var(--r)}
+.tbtn,.ibtn{background:var(--c);border:1px solid var(--ip);border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh);flex-shrink:0;position:relative;transition:transform .15s;color:var(--icon)}
+.tbtn:hover,.ibtn:hover{transform:scale(1.05)}.ibtn{display:none}.ibtn.sh{display:flex}
 .bdot{position:absolute;top:1px;right:1px;width:8px;height:8px;background:#e53935;border-radius:50%;display:none}
-.notify-status{font-size:10px;background:var(--c);border-radius:10px;padding:2px 6px;margin-left:8px;cursor:pointer;white-space:nowrap}
 
 .main{display:flex;gap:16px;max-width:960px;margin:0 auto;align-items:flex-start}
 .lside{flex-shrink:0;width:200px;text-align:center}
@@ -111,7 +108,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <span class="uname" onclick="editU()" title="Нажмите для изменения">&#128100; <span id="uNm">-</span></span>
     <span class="uphone" onclick="editP()" title="Нажмите для изменения">&#128222; <span id="uPh">-</span></span>
   </div>
-  <button class="notify-permission-btn" id="notifyPermBtn" onclick="requestNotificationPermission()">🔔 Уведомления</button>
   <button class="ibtn" id="iBtn" onclick="showNM()" title="Уведомления">&#128276;<span class="bdot" id="bdot"></span></button>
   <button class="tbtn" onclick="togT()" id="tBtn" title="Тема">&#127763;</button>
 </div>
@@ -213,7 +209,8 @@ var wC={},nwS=new Set(),alerts=[];
 var tod=new Date(),vd=new Date(tod),sm="w";
 var edD=null,edSch=[],pS=null;
 var saveTimeout=null;
-var notificationPermissionStatus = "default";
+var userNotifications = {}; // кэш уведомлений пользователя
+var userNotificationsRead = new Set(); // id прочитанных уведомлений (из localStorage)
 
 /* ===== Helpers ===== */
 function $(i){return document.getElementById(i)}
@@ -393,64 +390,6 @@ function editP(){var n=prompt("Ваш телефон:",localStorage.getItem("fp"
   if(n!==null){localStorage.setItem("fp",n.trim());updUI()}}
 
 /* ===== Notifications ===== */
-function requestNotificationPermission() {
-  if (!("Notification" in window)) {
-    sAl("Ваш браузер не поддерживает уведомления.");
-    return;
-  }
-  if (Notification.permission === "granted") {
-    showNotificationStatus("Уведомления уже разрешены", "green");
-    updateNotifyButtonUI();
-    return;
-  }
-  if (Notification.permission === "denied") {
-    // Показываем инструкцию по разблокировке
-    sAl("Уведомления заблокированы в настройках браузера.\n\nКак разблокировать:\n• Нажмите на значок замка/информации слева от адресной строки\n• Найдите раздел 'Уведомления' и выберите 'Разрешить'\n• Обновите страницу");
-    return;
-  }
-  // Запрашиваем разрешение
-  Notification.requestPermission().then(function(permission) {
-    notificationPermissionStatus = permission;
-    updateNotifyButtonUI();
-    if (permission === "granted") {
-      showNotificationStatus("Уведомления разрешены", "green");
-    } else {
-      showNotificationStatus("Уведомления отклонены", "red");
-    }
-  });
-}
-function updateNotifyButtonUI() {
-  var btn = $("notifyPermBtn");
-  if (!btn) return;
-  if (Notification && Notification.permission === "granted") {
-    btn.classList.remove("blocked");
-    btn.style.color = "var(--g)";
-    btn.title = "Уведомления включены";
-  } else if (Notification && Notification.permission === "denied") {
-    btn.classList.add("blocked");
-    btn.style.color = "var(--r)";
-    btn.title = "Уведомления заблокированы. Нажмите для инструкции.";
-  } else {
-    btn.classList.remove("blocked");
-    btn.style.color = "var(--icon)";
-    btn.title = "Нажмите, чтобы разрешить уведомления";
-  }
-}
-function showNotificationStatus(text, color) {
-  var statusDiv = document.createElement("div");
-  statusDiv.textContent = text;
-  statusDiv.style.position = "fixed";
-  statusDiv.style.bottom = "20px";
-  statusDiv.style.right = "20px";
-  statusDiv.style.backgroundColor = color;
-  statusDiv.style.color = "white";
-  statusDiv.style.padding = "6px 12px";
-  statusDiv.style.borderRadius = "20px";
-  statusDiv.style.fontSize = "12px";
-  statusDiv.style.zIndex = "1000";
-  document.body.appendChild(statusDiv);
-  setTimeout(() => statusDiv.remove(), 3000);
-}
 function showBrowserNotification(title, body) {
   if (!("Notification" in window)) return;
   if (Notification.permission === "granted") {
@@ -458,12 +397,62 @@ function showBrowserNotification(title, body) {
       new Notification(title, { body: body, silent: true });
     } catch(e) { console.error(e); }
   } else if (Notification.permission !== "denied") {
-    // Если ещё не решено, пробуем запросить
+    // Если разрешение ещё не запрошено, пытаемся запросить (но обычно это должно быть по клику)
     Notification.requestPermission().then(perm => {
       if (perm === "granted") new Notification(title, { body: body, silent: true });
     });
-  } else {
-    // Уведомления заблокированы, не показываем
+  }
+}
+
+// Загрузка уведомлений пользователя из Firebase
+function loadUserNotifications() {
+  if(!uid || !db) return;
+  db.ref("userNotifications/"+uid).orderByChild("timestamp").limitToLast(50).on("child_added", function(snap){
+    var data = snap.val();
+    var nid = snap.key;
+    // Проверяем, прочитано ли уже
+    if(userNotificationsRead.has(nid)) return;
+    // Добавляем в список уведомлений (в интерфейс)
+    var msg = data.message;
+    var time = data.timestamp || Date.now();
+    aAl(msg, nid);
+    // Показываем всплывающее уведомление
+    showBrowserNotification("Новое уведомление", msg);
+    // Отмечаем как прочитанное автоматически? Нет, только после просмотра пользователем
+    // но чтобы не показывать повторно, добавим в прочитанные временно?
+    // Мы пометим как прочитанное только когда пользователь откроет список или когда нажмёт на уведомление.
+    // Однако чтобы не показывать одно и то же при перезагрузке, нужно сохранять прочитанные в localStorage.
+    // Пока просто не добавляем в userNotificationsRead, но при загрузке списка отметим как прочитанные.
+    // Для предотвращения повторных показов при обновлении страницы, будем сохранять прочитанные id в localStorage.
+  });
+}
+function markNotificationRead(nid) {
+  userNotificationsRead.add(nid);
+  localStorage.setItem("userReadNotifications", JSON.stringify(Array.from(userNotificationsRead)));
+  // Также обновим в Firebase, чтобы синхронизировать между устройствами (опционально)
+  if(db && uid){
+    db.ref("userReadNotifications/"+uid+"/"+nid).set(true);
+  }
+}
+function loadReadNotifications() {
+  var stored = localStorage.getItem("userReadNotifications");
+  if(stored){
+    try{
+      var arr = JSON.parse(stored);
+      userNotificationsRead = new Set(arr);
+    }catch(e){}
+  }
+  // Также загружаем из Firebase для синхронизации
+  if(db && uid){
+    db.ref("userReadNotifications/"+uid).once("value", function(snap){
+      var val = snap.val();
+      if(val){
+        for(var k in val){
+          if(val[k]===true) userNotificationsRead.add(k);
+        }
+        localStorage.setItem("userReadNotifications", JSON.stringify(Array.from(userNotificationsRead)));
+      }
+    });
   }
 }
 
@@ -473,7 +462,6 @@ function render(){
   try{rSch()}catch(e){console.error("rSch:",e)}
   if(uid)$("iBtn").classList.add("sh");else $("iBtn").classList.remove("sh");
   updUI()
-  updateNotifyButtonUI();
 }
 function rCal(){
   var h = bMo(tod.getFullYear(), tod.getMonth());
@@ -487,11 +475,11 @@ function bMo(y,m){
   var offset = startWeekday === 0 ? 6 : startWeekday - 1;
   var h = '<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl">';
   for(var i=0;i<7;i++) h+="<th>"+WDs[i]+"</th>";
-//  h+="湛";
+  h+="</tr>";
   var dayCounter = 1;
   var today = new Date(tod.setHours(0,0,0,0));
   for(var row=0; row<6; row++) {
-    h+="\\";
+    h+="<tr>";
     for(var col=0; col<7; col++) {
       var cellDay = dayCounter - offset;
       if(cellDay < 1 || cellDay > daysInMonth) {
@@ -675,8 +663,10 @@ function sendPromotionNotification(userId, sid, userName){
     timestamp: firebase.database.ServerValue.TIMESTAMP,
     sid: sid
   });
-  showBrowserNotification("Запись подтверждена", userName+", вы записаны на занятие!");
-  aAl("Вы записаны на занятие из резерва!");
+  if(userId === uid){
+    showBrowserNotification("Запись подтверждена", userName+", вы записаны на занятие!");
+    aAl("Вы записаны на занятие из резерва!");
+  }
 }
 
 /* ===== Schedule Editor ===== */
@@ -896,28 +886,54 @@ function sendNotificationToAll(){
   var text=$("notifyText").value.trim();
   if(!text){sAl("Введите текст уведомления");return;}
   if(!db)return;
-  var notifRef=db.ref("adminNotifications").push();
-  notifRef.set({
+  // Сохраняем в глобальные уведомления, которые будут разосланы всем пользователям
+  // Для каждого пользователя нужно создать запись в userNotifications
+  db.ref("globalNotifications").push({
     message:text,
     timestamp:firebase.database.ServerValue.TIMESTAMP,
     from:uid
-  },function(err){
+  }, function(err){
     if(err){sAl("Ошибка: "+err.message);}
     else{clMo("mNotifyInput");sAl("Уведомление отправлено");}
   });
 }
-function listenAdminNotifications(){
-  if(!db)return;
-  db.ref("adminNotifications").orderByChild("timestamp").limitToLast(50).on("child_added",function(snap){
-    var data=snap.val();
-    var msg=data.message;
-    var id=snap.key;
+// Слушаем глобальные уведомления и добавляем их в userNotifications текущего пользователя
+function listenGlobalNotifications(){
+  if(!db || !uid) return;
+  db.ref("globalNotifications").orderByChild("timestamp").limitToLast(50).on("child_added", function(snap){
+    var data = snap.val();
+    var gid = snap.key;
+    // Проверяем, не добавлено ли уже это уведомление для этого пользователя
+    db.ref("userNotifications/"+uid).orderByChild("globalId").equalTo(gid).once("value", function(snapUser){
+      if(!snapUser.exists()){
+        // Добавляем в userNotifications
+        db.ref("userNotifications/"+uid).push({
+          message: data.message,
+          timestamp: data.timestamp,
+          globalId: gid,
+          from: data.from
+        });
+      }
+    });
+  });
+}
+// Слушаем персональные уведомления
+function listenUserNotifications() {
+  if(!db || !uid) return;
+  db.ref("userNotifications/"+uid).orderByChild("timestamp").limitToLast(50).on("child_added", function(snap){
+    var data = snap.val();
+    var nid = snap.key;
+    if(userNotificationsRead.has(nid)) return;
+    // Добавляем в список уведомлений (интерфейс)
+    var msg = data.message;
+    aAl(msg, nid);
+    // Показываем всплывающее уведомление
     showBrowserNotification("Новое уведомление", msg);
-    aAl(msg, id);
   });
 }
 function aAl(msg, id){
-  if(alerts.length && alerts[alerts.length-1].message===msg && alerts[alerts.length-1].id===id) return;
+  // Проверяем, не было ли уже этого уведомления (по id)
+  if(alerts.some(a=>a.id===id)) return;
   alerts.push({message:msg, time:Date.now(), id:id});
   $("bdot").style.display="block";
 }
@@ -929,7 +945,7 @@ function showNM(){
     for(var i=0;i<rev.length;i++){
       var notif=rev[i];
       h+='<div class="ni" data-id="'+notif.id+'"><div class="nm">'+E(notif.message)+'</div><div class="nt">'+new Date(notif.time).toLocaleString("ru")+'</div>';
-      if(isA && notif.id){
+      if(isA && notif.id && notif.id.startsWith("admin_")){
         h+='<span class="ndel" onclick="deleteNotification(\''+notif.id+'\')">🗑️</span>';
       }
       h+='</div>';
@@ -938,10 +954,17 @@ function showNM(){
   $("nL").innerHTML=h;
   opMo("mN");
   $("bdot").style.display="none";
+  // Отмечаем все показанные уведомления как прочитанные
+  for(var i=0;i<alerts.length;i++){
+    if(alerts[i].id){
+      markNotificationRead(alerts[i].id);
+    }
+  }
 }
 function deleteNotification(notifId){
   if(!isA || !db) return;
-  db.ref("adminNotifications/"+notifId).remove().then(()=>{
+  // Удаляем из глобальных, если это административное
+  db.ref("globalNotifications/"+notifId).remove().then(()=>{
     alerts = alerts.filter(n=>n.id !== notifId);
     showNM();
   }).catch(e=>console.error(e));
@@ -1072,7 +1095,7 @@ document.addEventListener("visibilitychange", function() {
 
 /* ===== Initial Render ===== */
 render();
-requestNotificationPermission();
+loadReadNotifications();
 
 /* ===== Firebase ===== */
 try{
@@ -1083,7 +1106,7 @@ try{
   auth.onAuthStateChanged(function(user){
     if(!user)return; uid=user.uid;
     console.log("User:",uid); setSC("c-ok","Онлайн"); $("iBtn").classList.add("sh");
-    requestNotificationPermission();
+    loadReadNotifications();
     ldWk(tod,function(){render()});
     var nw=new Date(tod); nw.setDate(nw.getDate()+7);
     ldWk(nw,function(){render()});
@@ -1115,7 +1138,8 @@ try{
       }
       render();
     },function(e){console.error("weekOverrides err:",e)});
-    listenAdminNotifications();
+    listenGlobalNotifications();
+    listenUserNotifications();
     setInterval(cNtf,30000); setTimeout(cNtf,2000);
   });
 }catch(e){console.error("FB err:",e);setSC("c-er","Ошибка")}
