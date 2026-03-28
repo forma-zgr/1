@@ -209,8 +209,7 @@ var wC={},nwS=new Set(),alerts=[];
 var tod=new Date(),vd=new Date(tod),sm="w";
 var edD=null,edSch=[],pS=null;
 var saveTimeout=null;
-var userNotifications = {}; // кэш уведомлений пользователя
-var userNotificationsRead = new Set(); // id прочитанных уведомлений (из localStorage)
+var userReadNotifications = new Set(); // set of notification IDs already read by this user
 
 /* ===== Helpers ===== */
 function $(i){return document.getElementById(i)}
@@ -397,64 +396,117 @@ function showBrowserNotification(title, body) {
       new Notification(title, { body: body, silent: true });
     } catch(e) { console.error(e); }
   } else if (Notification.permission !== "denied") {
-    // Если разрешение ещё не запрошено, пытаемся запросить (но обычно это должно быть по клику)
     Notification.requestPermission().then(perm => {
       if (perm === "granted") new Notification(title, { body: body, silent: true });
     });
   }
 }
 
-// Загрузка уведомлений пользователя из Firebase
-function loadUserNotifications() {
+// Загрузка статуса прочитанных уведомлений для текущего пользователя
+function loadUserReadStatus() {
   if(!uid || !db) return;
-  db.ref("userNotifications/"+uid).orderByChild("timestamp").limitToLast(50).on("child_added", function(snap){
-    var data = snap.val();
-    var nid = snap.key;
-    // Проверяем, прочитано ли уже
-    if(userNotificationsRead.has(nid)) return;
-    // Добавляем в список уведомлений (в интерфейс)
-    var msg = data.message;
-    var time = data.timestamp || Date.now();
-    aAl(msg, nid);
-    // Показываем всплывающее уведомление
-    showBrowserNotification("Новое уведомление", msg);
-    // Отмечаем как прочитанное автоматически? Нет, только после просмотра пользователем
-    // но чтобы не показывать повторно, добавим в прочитанные временно?
-    // Мы пометим как прочитанное только когда пользователь откроет список или когда нажмёт на уведомление.
-    // Однако чтобы не показывать одно и то же при перезагрузке, нужно сохранять прочитанные в localStorage.
-    // Пока просто не добавляем в userNotificationsRead, но при загрузке списка отметим как прочитанные.
-    // Для предотвращения повторных показов при обновлении страницы, будем сохранять прочитанные id в localStorage.
+  db.ref("userReadNotifications/"+uid).once("value", function(snap){
+    var val = snap.val();
+    userReadNotifications.clear();
+    if(val){
+      for(var k in val){
+        if(val[k]===true) userReadNotifications.add(k);
+      }
+    }
+    // также сохраняем в localStorage для быстрого доступа
+    localStorage.setItem("userReadNotifications", JSON.stringify(Array.from(userReadNotifications)));
   });
 }
-function markNotificationRead(nid) {
-  userNotificationsRead.add(nid);
-  localStorage.setItem("userReadNotifications", JSON.stringify(Array.from(userNotificationsRead)));
-  // Также обновим в Firebase, чтобы синхронизировать между устройствами (опционально)
-  if(db && uid){
-    db.ref("userReadNotifications/"+uid+"/"+nid).set(true);
-  }
+
+// Отметить уведомление как прочитанное
+function markNotificationRead(notifId) {
+  if(!uid || !db) return;
+  userReadNotifications.add(notifId);
+  localStorage.setItem("userReadNotifications", JSON.stringify(Array.from(userReadNotifications)));
+  db.ref("userReadNotifications/"+uid+"/"+notifId).set(true);
 }
-function loadReadNotifications() {
-  var stored = localStorage.getItem("userReadNotifications");
-  if(stored){
-    try{
-      var arr = JSON.parse(stored);
-      userNotificationsRead = new Set(arr);
-    }catch(e){}
-  }
-  // Также загружаем из Firebase для синхронизации
-  if(db && uid){
-    db.ref("userReadNotifications/"+uid).once("value", function(snap){
-      var val = snap.val();
-      if(val){
-        for(var k in val){
-          if(val[k]===true) userNotificationsRead.add(k);
-        }
-        localStorage.setItem("userReadNotifications", JSON.stringify(Array.from(userNotificationsRead)));
+
+// Прослушивание новых глобальных уведомлений (adminNotifications)
+function listenAdminNotifications() {
+  if(!db) return;
+  db.ref("adminNotifications").orderByChild("timestamp").limitToLast(50).on("child_added", function(snap){
+    var data = snap.val();
+    var notifId = snap.key;
+    // Если уже прочитано, не показываем всплывающее, но сохраняем в список (alerts)
+    if(!userReadNotifications.has(notifId)) {
+      showBrowserNotification("Новое уведомление", data.message);
+      // не отмечаем как прочитанное автоматически, чтобы при открытии списка пользователь видел, что новое
+    }
+    // Добавляем в общий список уведомлений (для отображения в колокольчике)
+    // Проверяем, нет ли уже такого id
+    if(!alerts.some(a => a.id === notifId)){
+      alerts.push({message: data.message, time: data.timestamp || Date.now(), id: notifId});
+      $("bdot").style.display = "block";
+    }
+  });
+}
+
+// Отправка уведомления администратором
+function sendAdminNotification(){
+  if(!isA){sAl("Доступно только администратору");return;}
+  opMo("mNotifyInput");
+  $("notifyText").value="";
+}
+function sendNotificationToAll(){
+  var text=$("notifyText").value.trim();
+  if(!text){sAl("Введите текст уведомления");return;}
+  if(!db)return;
+  db.ref("adminNotifications").push({
+    message:text,
+    timestamp:firebase.database.ServerValue.TIMESTAMP,
+    from:uid
+  }, function(err){
+    if(err){sAl("Ошибка: "+err.message);}
+    else{clMo("mNotifyInput");sAl("Уведомление отправлено");}
+  });
+}
+
+function showNM(){
+  var h="";
+  if(!alerts.length) h='<div class="nc">Нет уведомлений</div>';
+  else{
+    // Сортируем по времени (новые сверху)
+    var sorted = [...alerts].sort((a,b)=> b.time - a.time);
+    for(var i=0;i<sorted.length;i++){
+      var notif = sorted[i];
+      h+='<div class="ni" data-id="'+notif.id+'"><div class="nm">'+E(notif.message)+'</div><div class="nt">'+new Date(notif.time).toLocaleString("ru")+'</div>';
+      if(isA){
+        h+='<span class="ndel" onclick="deleteNotification(\''+notif.id+'\')">🗑️</span>';
       }
-    });
+      h+='</div>';
+    }
+  }
+  $("nL").innerHTML = h;
+  opMo("mN");
+  $("bdot").style.display = "none";
+  // Отмечаем все показанные уведомления как прочитанные
+  for(var i=0;i<alerts.length;i++){
+    if(alerts[i].id && !userReadNotifications.has(alerts[i].id)){
+      markNotificationRead(alerts[i].id);
+    }
   }
 }
+
+function deleteNotification(notifId){
+  if(!isA || !db) return;
+  db.ref("adminNotifications/"+notifId).remove().then(()=>{
+    // удаляем из локального массива
+    alerts = alerts.filter(n=>n.id !== notifId);
+    showNM();
+  }).catch(e=>console.error(e));
+}
+
+function aAl(msg, id){
+  if(alerts.some(a=>a.id===id)) return;
+  alerts.push({message:msg, time:Date.now(), id:id});
+  $("bdot").style.display="block";
+}
+function sBN(t,b){showBrowserNotification(t,b);}
 
 /* ===== Render ===== */
 function render(){
@@ -658,6 +710,10 @@ function promoteFromWaitlist(sid){
 
 function sendPromotionNotification(userId, sid, userName){
   if(!db) return;
+  // Добавляем уведомление в глобальные, чтобы оно попало в список для всех? Нет, только конкретному пользователю.
+  // Для простоты, можно отправить через adminNotifications, но это будет видно всем. Лучше отправить персонально.
+  // Пока оставим как было: добавляем в userNotifications, но для совместимости с новым механизмом уведомлений,
+  // добавим в adminNotifications с пометкой? Сделаем просто персональное уведомление.
   db.ref("userNotifications/"+userId).push({
     message: "Вы были перемещены из резерва в основную запись на занятие!",
     timestamp: firebase.database.ServerValue.TIMESTAMP,
@@ -876,101 +932,6 @@ function aC(sid){
   });
 }
 
-/* ===== Admin Notifications ===== */
-function sendAdminNotification(){
-  if(!isA){sAl("Доступно только администратору");return;}
-  opMo("mNotifyInput");
-  $("notifyText").value="";
-}
-function sendNotificationToAll(){
-  var text=$("notifyText").value.trim();
-  if(!text){sAl("Введите текст уведомления");return;}
-  if(!db)return;
-  // Сохраняем в глобальные уведомления, которые будут разосланы всем пользователям
-  // Для каждого пользователя нужно создать запись в userNotifications
-  db.ref("globalNotifications").push({
-    message:text,
-    timestamp:firebase.database.ServerValue.TIMESTAMP,
-    from:uid
-  }, function(err){
-    if(err){sAl("Ошибка: "+err.message);}
-    else{clMo("mNotifyInput");sAl("Уведомление отправлено");}
-  });
-}
-// Слушаем глобальные уведомления и добавляем их в userNotifications текущего пользователя
-function listenGlobalNotifications(){
-  if(!db || !uid) return;
-  db.ref("globalNotifications").orderByChild("timestamp").limitToLast(50).on("child_added", function(snap){
-    var data = snap.val();
-    var gid = snap.key;
-    // Проверяем, не добавлено ли уже это уведомление для этого пользователя
-    db.ref("userNotifications/"+uid).orderByChild("globalId").equalTo(gid).once("value", function(snapUser){
-      if(!snapUser.exists()){
-        // Добавляем в userNotifications
-        db.ref("userNotifications/"+uid).push({
-          message: data.message,
-          timestamp: data.timestamp,
-          globalId: gid,
-          from: data.from
-        });
-      }
-    });
-  });
-}
-// Слушаем персональные уведомления
-function listenUserNotifications() {
-  if(!db || !uid) return;
-  db.ref("userNotifications/"+uid).orderByChild("timestamp").limitToLast(50).on("child_added", function(snap){
-    var data = snap.val();
-    var nid = snap.key;
-    if(userNotificationsRead.has(nid)) return;
-    // Добавляем в список уведомлений (интерфейс)
-    var msg = data.message;
-    aAl(msg, nid);
-    // Показываем всплывающее уведомление
-    showBrowserNotification("Новое уведомление", msg);
-  });
-}
-function aAl(msg, id){
-  // Проверяем, не было ли уже этого уведомления (по id)
-  if(alerts.some(a=>a.id===id)) return;
-  alerts.push({message:msg, time:Date.now(), id:id});
-  $("bdot").style.display="block";
-}
-function showNM(){
-  var h="";
-  if(!alerts.length) h='<div class="nc">Нет уведомлений</div>';
-  else{
-    var rev=alerts.slice().reverse();
-    for(var i=0;i<rev.length;i++){
-      var notif=rev[i];
-      h+='<div class="ni" data-id="'+notif.id+'"><div class="nm">'+E(notif.message)+'</div><div class="nt">'+new Date(notif.time).toLocaleString("ru")+'</div>';
-      if(isA && notif.id && notif.id.startsWith("admin_")){
-        h+='<span class="ndel" onclick="deleteNotification(\''+notif.id+'\')">🗑️</span>';
-      }
-      h+='</div>';
-    }
-  }
-  $("nL").innerHTML=h;
-  opMo("mN");
-  $("bdot").style.display="none";
-  // Отмечаем все показанные уведомления как прочитанные
-  for(var i=0;i<alerts.length;i++){
-    if(alerts[i].id){
-      markNotificationRead(alerts[i].id);
-    }
-  }
-}
-function deleteNotification(notifId){
-  if(!isA || !db) return;
-  // Удаляем из глобальных, если это административное
-  db.ref("globalNotifications/"+notifId).remove().then(()=>{
-    alerts = alerts.filter(n=>n.id !== notifId);
-    showNM();
-  }).catch(e=>console.error(e));
-}
-function sBN(t,b){showBrowserNotification(t,b);}
-
 /* ===== Notifications for clients (time-based) ===== */
 function cNtf(){
   var now=new Date();
@@ -1095,7 +1056,6 @@ document.addEventListener("visibilitychange", function() {
 
 /* ===== Initial Render ===== */
 render();
-loadReadNotifications();
 
 /* ===== Firebase ===== */
 try{
@@ -1106,7 +1066,7 @@ try{
   auth.onAuthStateChanged(function(user){
     if(!user)return; uid=user.uid;
     console.log("User:",uid); setSC("c-ok","Онлайн"); $("iBtn").classList.add("sh");
-    loadReadNotifications();
+    loadUserReadStatus();
     ldWk(tod,function(){render()});
     var nw=new Date(tod); nw.setDate(nw.getDate()+7);
     ldWk(nw,function(){render()});
@@ -1138,8 +1098,7 @@ try{
       }
       render();
     },function(e){console.error("weekOverrides err:",e)});
-    listenGlobalNotifications();
-    listenUserNotifications();
+    listenAdminNotifications();
     setInterval(cNtf,30000); setTimeout(cNtf,2000);
   });
 }catch(e){console.error("FB err:",e);setSC("c-er","Ошибка")}
