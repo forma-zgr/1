@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>ФОРМА - расписание</title>
 <style>
+/* стили без изменений, но удалены все иероглифы */
 :root{--bg:#f0f2f5;--c:#fff;--t:#333;--t2:#777;--t3:#aaa;--bd:#e0e0e0;--ip:#ddd;--g:#4caf50;--gh:#43a047;--r:#ef5350;--gbg:#e8f5e9;--gcl:#2e7d32;--abg:#fff3e0;--abd:#ffcc80;--acl:#e65100;--sh:0 2px 8px rgba(0,0,0,.08);--mb:#fff;--blue:#2196f3;--icon:#555}
 [data-theme="dark"]{--bg:#121212;--c:#1e1e1e;--t:#e0e0e0;--t2:#aaa;--t3:#666;--bd:#333;--ip:#444;--g:#66bb6a;--gh:#4caf50;--r:#ef5350;--gbg:#1b3a1b;--gcl:#81c784;--abg:#3e2723;--abd:#5d4037;--acl:#ffab91;--sh:0 2px 8px rgba(0,0,0,.3);--mb:#252525;--blue:#64b5f6;--icon:#ffc107}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -453,7 +454,9 @@ function showBrowserNotification(title, body) {
       new Notification(title, { body: body, silent: true });
     } catch(e) { console.error(e); }
   } else if (Notification.permission !== "denied") {
-    // do nothing, user must enable via button
+    Notification.requestPermission().then(perm => {
+      if (perm === "granted") new Notification(title, { body: body, silent: true });
+    });
   }
 }
 
@@ -562,15 +565,19 @@ function render(){
   updUI();
   updateNotifyButtonUI();
 }
+// Показываем два месяца: текущий и следующий
 function rCal(){
   var h = bMo(tod.getFullYear(), tod.getMonth());
+  var nextMonth = new Date(tod.getFullYear(), tod.getMonth()+1, 1);
+  h += bMo(nextMonth.getFullYear(), nextMonth.getMonth());
   $("cal").innerHTML = h;
 }
 function bMo(y,m){
   var firstDay = new Date(y, m, 1);
   var lastDay = new Date(y, m+1, 0);
   var daysInMonth = lastDay.getDate();
-  var startWeekday = firstDay.getDay();
+  var startWeekday = firstDay.getDay(); // 0 воскресенье
+  // Смещение, чтобы первая ячейка была понедельник
   var offset = startWeekday === 0 ? 6 : startWeekday - 1;
   var h = '<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl">';
   for(var i=0;i<7;i++) h+="<th>"+WDs[i]+"</th>";
@@ -589,8 +596,10 @@ function bMo(y,m){
       var ds = y+"-"+S2(m+1)+"-"+S2(cellDay);
       var currentDate = new Date(ds);
       var isPast = currentDate < today;
-      var hasSchedule = !isPast && hasScheduleOnDate(ds);
-      var isBooked = !isPast && hB(ds);
+      // Разрешаем клик по прошедшим датам администратору, но не клиенту
+      var canSelect = isA ? true : !isPast;
+      var hasSchedule = canSelect && hasScheduleOnDate(ds);
+      var isBooked = canSelect && hB(ds);
       var isToday = ds === Fd(tod);
       var isSelected = (sm==="d" && ds===Fd(vd));
       var c = "cd";
