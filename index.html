@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>ФОРМА - расписание</title>
 <style>
+/* стили без иероглифов */
 :root{--bg:#f0f2f5;--c:#fff;--t:#333;--t2:#777;--t3:#aaa;--bd:#e0e0e0;--ip:#ddd;--g:#4caf50;--gh:#43a047;--r:#ef5350;--gbg:#e8f5e9;--gcl:#2e7d32;--abg:#fff3e0;--abd:#ffcc80;--acl:#e65100;--sh:0 2px 8px rgba(0,0,0,.08);--mb:#fff;--blue:#2196f3;--icon:#555}
 [data-theme="dark"]{--bg:#121212;--c:#1e1e1e;--t:#e0e0e0;--t2:#aaa;--t3:#666;--bd:#333;--ip:#444;--g:#66bb6a;--gh:#4caf50;--r:#ef5350;--gbg:#1b3a1b;--gcl:#81c784;--abg:#3e2723;--abd:#5d4037;--acl:#ffab91;--sh:0 2px 8px rgba(0,0,0,.3);--mb:#252525;--blue:#64b5f6;--icon:#ffc107}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -659,6 +660,25 @@ function sortByTime(arr){
   });
 }
 
+// Поиск записи по имени и телефону (без учёта uid)
+function findBookingByNamePhone(sid, name, phone) {
+  var bookings = bk[sid] || {};
+  for(var k in bookings){
+    if(bookings[k].name && bookings[k].name.toLowerCase().trim() === name.toLowerCase().trim() &&
+       bookings[k].phone && bookings[k].phone === phone){
+      return {type: 'booked', uid: k};
+    }
+  }
+  var wl = waitlist[sid] || {};
+  for(var w in wl){
+    if(wl[w].name && wl[w].name.toLowerCase().trim() === name.toLowerCase().trim() &&
+       wl[w].phone && wl[w].phone === phone){
+      return {type: 'waitlist', uid: w};
+    }
+  }
+  return null;
+}
+
 function rSl(s,ds){
   var sid=s.id+"_"+ds,e=bk[sid]||{};
   var ls = [];
@@ -668,8 +688,6 @@ function rSl(s,ds){
     }
   }
   ls = sortByTime(ls);
-  var mi = uid && e[uid] ? true : false;
-  var fu = ls.length >= s.max;
   
   var wl = waitlist[sid] || {};
   var wlArr = [];
@@ -679,7 +697,26 @@ function rSl(s,ds){
     }
   }
   wlArr = sortByTime(wlArr);
-  var inWaitlist = uid && wl[uid] ? true : false;
+  
+  // Определяем статус текущего пользователя по uid или по имени+телефону
+  var userStatus = null; // 'booked' / 'waitlist' / null
+  var userUid = uid;
+  var userName = localStorage.getItem("fn") || "";
+  var userPhone = localStorage.getItem("fp") || "";
+  
+  if(uid && e[uid]) userStatus = 'booked';
+  else if(uid && wl[uid]) userStatus = 'waitlist';
+  else if(userName && userPhone){
+    var found = findBookingByNamePhone(sid, userName, userPhone);
+    if(found){
+      userStatus = found.type;
+      userUid = found.uid;
+    }
+  }
+  
+  var mi = (userStatus === 'booked');
+  var inWaitlist = (userStatus === 'waitlist');
+  var fu = ls.length >= s.max;
   
   var h='<div class="sl"><div class="sll"><div class="st">'+E(s.time)+" — "+E(s.name)+"</div><div class='sn'>";
   if(ls.length){
@@ -709,10 +746,10 @@ function rSl(s,ds){
   if(uid){
     if(mi){
       h+='<span style="color:var(--g);font-weight:500;margin-right:4px">Вы записаны</span>';
-      h+='<button class="b br" data-a="ca" data-s="'+sid+'">✖</button>';
+      h+='<button class="b br" data-a="ca" data-s="'+sid+'" data-u="'+userUid+'">✖</button>';
     } else if(inWaitlist){
       h+='<span style="color:var(--blue);font-weight:500;margin-right:4px">В резерве</span>';
-      h+='<button class="b br" data-a="cancelWait" data-s="'+sid+'">✖</button>';
+      h+='<button class="b br" data-a="cancelWait" data-s="'+sid+'" data-u="'+userUid+'">✖</button>';
     } else if(!fu){
       h+='<button class="b bg" data-a="sg" data-s="'+sid+'">Записаться</button>';
     } else {
@@ -725,24 +762,6 @@ function rSl(s,ds){
 function showPhone(el){
   var phone = el.getAttribute("data-phone");
   if(phone) alert("Телефон: "+phone);
-}
-
-// Проверка на наличие такого же имени (игнорируя регистр) для других пользователей
-function nameExistsForOtherUser(sid, name, currentUid) {
-  if(!db) return false;
-  var bookings = bk[sid] || {};
-  for(var k in bookings){
-    if(k !== currentUid && bookings[k].name && bookings[k].name.toLowerCase().trim() === name.toLowerCase().trim()){
-      return true;
-    }
-  }
-  var wl = waitlist[sid] || {};
-  for(var w in wl){
-    if(w !== currentUid && wl[w].name && wl[w].name.toLowerCase().trim() === name.toLowerCase().trim()){
-      return true;
-    }
-  }
-  return false;
 }
 
 // Перемещение первого из резерва в основной список
@@ -917,9 +936,12 @@ function clW(){
 function openSg(sid){
   var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
   if(fn&&uid&&db){
+    // Проверка: уже записан по uid
     if(bk[sid]&&bk[sid][uid]){sAl("Вы уже записаны!");return}
-    if(nameExistsForOtherUser(sid, fn, uid)){
-      sAl("Клиент с таким именем уже записан или в резерве на это занятие.");
+    // Проверка по имени+телефону на других пользователей
+    var existing = findBookingByNamePhone(sid, fn, fp);
+    if(existing && existing.uid !== uid){
+      sAl("Клиент с таким именем и телефоном уже записан или в резерве на это занятие.");
       return;
     }
     db.ref("bookings/"+sid+"/"+uid).set({name:fn,phone:fp||"",t:firebase.database.ServerValue.TIMESTAMP});
@@ -935,18 +957,20 @@ function doSg(){
   if(!uid||!db){sAl("Подождите загрузки...");return}
   if(!pS)return;
   if(bk[pS]&&bk[pS][uid]){sAl("Вы уже записаны!");clMo("mS");return}
-  if(nameExistsForOtherUser(pS, n, uid)){
-    sAl("Клиент с таким именем уже записан или в резерве на это занятие.");
+  var existing = findBookingByNamePhone(pS, n, p);
+  if(existing && existing.uid !== uid){
+    sAl("Клиент с таким именем и телефоном уже записан или в резерве на это занятие.");
     clMo("mS");
     return;
   }
   localStorage.setItem("fn",n);localStorage.setItem("fp",p);updUI();
   db.ref("bookings/"+pS+"/"+uid).set({name:n,phone:p,t:firebase.database.ServerValue.TIMESTAMP});clMo("mS")
 }
-function doCa(sid){
+function doCa(sid, userId){
   if(!uid||!db) return;
+  var targetUid = userId || uid;
   sCo("Отменить запись на это занятие?", function(){
-    db.ref("bookings/"+sid+"/"+uid).remove(function(){
+    db.ref("bookings/"+sid+"/"+targetUid).remove(function(){
       promoteFromWaitlist(sid);
     });
   });
@@ -956,15 +980,17 @@ function addToWaitlist(sid){
   if(bk[sid] && bk[sid][uid]){sAl("Вы уже записаны на это занятие!");return;}
   var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
   if(!fn){sAl("Сначала укажите имя и фамилию");return;}
-  if(nameExistsForOtherUser(sid, fn, uid)){
-    sAl("Клиент с таким именем уже записан или в резерве на это занятие.");
+  var existing = findBookingByNamePhone(sid, fn, fp);
+  if(existing && existing.uid !== uid){
+    sAl("Клиент с таким именем и телефоном уже записан или в резерве на это занятие.");
     return;
   }
   db.ref("waitlist/"+sid+"/"+uid).set({name:fn,phone:fp||"",t:firebase.database.ServerValue.TIMESTAMP});
 }
-function cancelWaitlist(sid){
+function cancelWaitlist(sid, userId){
   if(!uid||!db)return;
-  sCo("Удалить из резерва?",function(){db.ref("waitlist/"+sid+"/"+uid).remove()});
+  var targetUid = userId || uid;
+  sCo("Удалить из резерва?",function(){db.ref("waitlist/"+sid+"/"+targetUid).remove()});
 }
 
 /* ===== Admin ===== */
@@ -1090,12 +1116,12 @@ document.addEventListener("click",function(e){
     sm="d"; vd=selectedDate; render(); return;
   }
   var el=e.target.closest("[data-a]");
-  if(!el)return;var a=el.dataset.a,sid=el.dataset.s;
+  if(!el)return;var a=el.dataset.a,sid=el.dataset.s,uidParam=el.dataset.u;
   if(a==="sg")openSg(sid);
-  else if(a==="ca")doCa(sid);
+  else if(a==="ca")doCa(sid, uidParam);
   else if(a==="addWait")addToWaitlist(sid);
-  else if(a==="cancelWait")cancelWaitlist(sid);
-  else if(a==="ar")aR(sid,el.dataset.u);
+  else if(a==="cancelWait")cancelWaitlist(sid, uidParam);
+  else if(a==="ar")aR(sid,uidParam);
   else if(a==="ac")aC(sid);
   else if(a==="ac2"){
     var di2=+el.dataset.d;
