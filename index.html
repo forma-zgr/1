@@ -14,8 +14,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .hdr{flex:1;text-align:center;user-select:none;min-width:120px}
 .hdr h1{font-size:20px;cursor:pointer}
 .uinfo{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.uinfo .uname,.uinfo .uphone{background:var(--c);border:1px solid var(--ip);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;box-shadow:var(--sh);color:var(--g);font-weight:500;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.uinfo .uname:hover,.uinfo .uphone:hover{background:var(--gbg)}
+.uinfo .uname,.uinfo .uphone{background:var(--c);border:1px solid var(--ip);border-radius:6px;padding:4px 8px;font-size:12px;box-shadow:var(--sh);color:var(--g);font-weight:500;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uinfo .uname{cursor:pointer}
+.uinfo .uname:hover{background:var(--gbg)}
+.logout-btn{background:none;border:1px solid var(--ip);border-radius:6px;padding:3px 8px;font-size:13px;cursor:pointer;color:var(--t3);box-shadow:var(--sh)}
+.logout-btn:hover{color:var(--r);border-color:var(--r)}
+.auth-btns{display:flex;gap:5px;flex-shrink:0}
+.auth-btn{border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;font-weight:600;transition:opacity .15s}
+.auth-btn:hover{opacity:.85}
+.auth-btn.login{background:var(--g);color:#fff}
+.auth-btn.reg{background:var(--blue);color:#fff}
 .badge{display:none;background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;margin-top:4px}
 .cs{display:inline-block;font-size:10px;padding:2px 7px;border-radius:8px;margin-top:3px;color:#fff}
 .c-ok{background:#4caf50}.c-er{background:#e53935}.c-w{background:#ff9800}
@@ -72,6 +80,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .mx input{width:100%;padding:9px;border:2px solid var(--ip);border-radius:6px;font-size:13px;outline:none;background:var(--c);color:var(--t);margin-bottom:7px;font-family:inherit}
 .mx input:focus{border-color:var(--g)}
 .mx .bo{width:100%;padding:10px;background:var(--g);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;margin-top:4px}.mx .bo:hover{background:var(--gh)}
+.mx .link{text-align:center;margin-top:8px;font-size:11px;color:var(--t2)}
+.mx .link span{color:var(--g);cursor:pointer;text-decoration:underline}
+.mx .link span:hover{opacity:.7}
 
 .ap{background:var(--abg);border:1px solid var(--abd);border-radius:10px;padding:12px;margin-top:14px;display:none;max-width:960px;margin-left:auto;margin-right:auto}
 .ap h3{color:var(--acl);margin-bottom:6px;font-size:13px}
@@ -107,8 +118,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div id="cs" class="cs c-w">...</div>
   </div>
   <div class="uinfo" id="uinfo" style="display:none">
-    <span class="uname" onclick="editU()" title="Нажмите для изменения">&#128100; <span id="uNm">-</span></span>
-    <span class="uphone" onclick="editP()" title="Нажмите для изменения">&#128222; <span id="uPh">-</span></span>
+    <span class="uname" onclick="editU()" title="Нажмите для изменения имени">&#128100; <span id="uNm">-</span></span>
+    <span class="uphone">&#128222; <span id="uPh">-</span></span>
+    <button class="logout-btn" onclick="doLogout()" title="Выйти">&#128682;</button>
+  </div>
+  <div class="auth-btns" id="authBtns" style="display:none">
+    <button class="auth-btn login" onclick="opMo('mLogin')">Войти</button>
+    <button class="auth-btn reg" onclick="opMo('mReg')">Регистрация</button>
   </div>
   <button class="notify-perm-btn" id="notifyPermBtn" onclick="requestNotificationPermission()">🔔 Включить уведомления</button>
   <button class="ibtn" id="iBtn" onclick="showNM()" title="Уведомления">&#128276;<span class="bdot" id="bdot"></span></button>
@@ -132,11 +148,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 </div>
 
-<div class="mo" id="mS"><div class="mx">
-  <h3>Запись на занятие</h3>
-  <input type="text" id="iN" placeholder="Ваши имя и фамилия" maxlength="30">
-  <input type="tel" id="iP" placeholder="Телефон" maxlength="20">
-  <button class="bo" onclick="doSg()">Записаться</button>
+<!-- Вход -->
+<div class="mo" id="mLogin"><div class="mx">
+  <h3>&#128274; Вход в кабинет</h3>
+  <input type="tel" id="loginPhone" placeholder="Телефон" maxlength="20">
+  <input type="password" id="loginPin" placeholder="ПИН-код" maxlength="8" inputmode="numeric">
+  <button class="bo" onclick="doLogin()">Войти</button>
+  <div class="link">Нет аккаунта? <span onclick="clMo('mLogin');opMo('mReg')">Зарегистрируйтесь</span></div>
+</div></div>
+
+<!-- Регистрация -->
+<div class="mo" id="mReg"><div class="mx">
+  <h3>&#128221; Регистрация</h3>
+  <input type="text" id="regName" placeholder="Имя и фамилия" maxlength="30">
+  <input type="tel" id="regPhone" placeholder="Телефон" maxlength="20">
+  <input type="password" id="regPin" placeholder="Придумайте ПИН-код (мин. 4 цифры)" maxlength="8" inputmode="numeric">
+  <button class="bo" onclick="doRegister()">Зарегистрироваться</button>
+  <div class="link">Уже есть аккаунт? <span onclick="clMo('mReg');opMo('mLogin')">Войдите</span></div>
 </div></div>
 
 <div class="mo" id="mA"><div class="mx">
@@ -177,7 +205,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 </div></div>
 
 <div class="mo" id="mL"><div class="mx">
-  <div id="lTx" style="margin-bottom:10px;font-size:14px"></div>
+  <div id="lTx" style="margin-bottom:10px;font-size:14px;white-space:pre-line"></div>
   <button class="bo" id="lOk">OK</button>
 </div></div>
 
@@ -207,7 +235,7 @@ var FC={
 var ACODE="2022";
 
 /* ===== Globals ===== */
-var uid=null,isA=false,bk={},waitlist={},db=null;
+var uid=null,isA=false,loggedIn=false,bk={},waitlist={},db=null;
 var wC={},nwS=new Set(),alerts=[];
 var tod=new Date(),vd=new Date(tod),sm="w";
 var edD=null,edSch=[],pS=null;
@@ -243,18 +271,27 @@ function gM(d){
 function wK(d){return Fd(gM(d))}
 function gid(){return "x"+Date.now()+"_"+Math.random().toString(36).substr(2,5)}
 
-/* ===== Client Key (идентификация по имени+телефону) ===== */
-function getClientKey(name, phone){
-  var n=(name||"").trim();
-  var p=(phone||"").trim();
-  var combined=n+"__"+p;
-  return combined.replace(/[.#$\[\]\/]/g,"_");
+/* ===== Client Key (идентификация по телефону) ===== */
+function sanitizePhone(p){
+  return (p||"").replace(/[^0-9+]/g,"");
+}
+function getClientKey(phone){
+  var p=sanitizePhone(phone);
+  if(!p) return null;
+  return "p_"+p.replace(/[.#$\[\]\/+]/g,"_");
 }
 function myKey(){
-  var fn=localStorage.getItem("fn");
   var fp=localStorage.getItem("fp");
-  if(!fn||!fp) return null;
-  return getClientKey(fn,fp);
+  if(!fp) return null;
+  return getClientKey(fp);
+}
+function simpleHash(str){
+  var hash=5381;
+  for(var i=0;i<str.length;i++){
+    hash=((hash<<5)+hash)+str.charCodeAt(i);
+    hash|=0;
+  }
+  return "h"+Math.abs(hash).toString(36);
 }
 
 var MN=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
@@ -290,6 +327,104 @@ function togT(){var d=document.documentElement.hasAttribute("data-theme");
   if(d){document.documentElement.removeAttribute("data-theme");localStorage.setItem("th","l")}
   else{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("th","d")}aTB()}
 aTB();
+
+/* ===== Auth: Регистрация / Вход / Выход ===== */
+function checkLoginState(){
+  if(localStorage.getItem("loggedIn")==="1" && localStorage.getItem("fp")){
+    loggedIn=true;
+  } else {
+    loggedIn=false;
+  }
+}
+checkLoginState();
+
+function handlePermissionError(err, action){
+  console.error(action + " error:", err);
+  if(err && err.message && err.message.indexOf("permission_denied") !== -1){
+    sAl("Ошибка доступа: permission_denied\n\nНужно обновить правила Firebase Realtime Database.\n\nОткройте console.firebase.google.com → ваш проект → Realtime Database → Rules и установите правила, разрешающие чтение/запись для авторизованных пользователей (auth != null).");
+  } else {
+    sAl("Ошибка (" + action + "): " + (err ? err.message : "неизвестная"));
+  }
+}
+
+function doRegister(){
+  var name=$("regName").value.trim();
+  var phone=$("regPhone").value.trim();
+  var pin=$("regPin").value.trim();
+  if(!name){sAl("Введите имя и фамилию");return;}
+  if(!phone){sAl("Введите телефон");return;}
+  if(!pin||pin.length<4){sAl("ПИН-код должен быть минимум 4 цифры");return;}
+  if(!/^\d{4,8}$/.test(pin)){sAl("ПИН-код должен содержать только цифры (4-8 цифр)");return;}
+  if(!db){sAl("Нет соединения с базой данных. Подождите...");return;}
+  if(!uid){sAl("Авторизация ещё не завершена. Подождите пару секунд и попробуйте снова.");return;}
+  var key=getClientKey(phone);
+  if(!key){sAl("Некорректный номер телефона");return;}
+  db.ref("clients/"+key).once("value",function(snap){
+    if(snap.val()){
+      sAl("Этот телефон уже зарегистрирован.\nИспользуйте кнопку «Войти».");
+      return;
+    }
+    var pinHash=simpleHash(pin+sanitizePhone(phone));
+    db.ref("clients/"+key).set({
+      name:name,
+      phone:phone,
+      pin:pinHash
+    },function(err){
+      if(err){handlePermissionError(err,"регистрация");return;}
+      localStorage.setItem("fn",name);
+      localStorage.setItem("fp",phone);
+      localStorage.setItem("loggedIn","1");
+      loggedIn=true;
+      clMo("mReg");
+      sAl("Регистрация успешна! Добро пожаловать!");
+      render();
+    });
+  },function(readErr){
+    handlePermissionError(readErr,"чтение клиентов");
+  });
+}
+
+function doLogin(){
+  var phone=$("loginPhone").value.trim();
+  var pin=$("loginPin").value.trim();
+  if(!phone){sAl("Введите телефон");return;}
+  if(!pin){sAl("Введите ПИН-код");return;}
+  if(!db){sAl("Нет соединения с базой данных. Подождите...");return;}
+  if(!uid){sAl("Авторизация ещё не завершена. Подождите пару секунд и попробуйте снова.");return;}
+  var key=getClientKey(phone);
+  if(!key){sAl("Некорректный номер телефона");return;}
+  db.ref("clients/"+key).once("value",function(snap){
+    var data=snap.val();
+    if(!data){
+      sAl("Телефон не найден.\nСначала зарегистрируйтесь.");
+      return;
+    }
+    var pinHash=simpleHash(pin+sanitizePhone(phone));
+    if(data.pin!==pinHash){
+      sAl("Неверный ПИН-код");
+      return;
+    }
+    localStorage.setItem("fn",data.name);
+    localStorage.setItem("fp",data.phone||phone);
+    localStorage.setItem("loggedIn","1");
+    loggedIn=true;
+    clMo("mLogin");
+    loadUserReadStatus();
+    render();
+  },function(readErr){
+    handlePermissionError(readErr,"вход");
+  });
+}
+
+function doLogout(){
+  sCo("Выйти из кабинета?",function(){
+    localStorage.removeItem("fn");
+    localStorage.removeItem("fp");
+    localStorage.removeItem("loggedIn");
+    loggedIn=false;
+    render();
+  });
+}
 
 /* ===== Week Data from Firebase ===== */
 function parseWeek(raw){
@@ -399,12 +534,24 @@ function hB(ds){
 function updUI(){
   var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
   $("uNm").textContent=fn||"-";$("uPh").textContent=fp||"-";
-  if(fn||fp)$("uinfo").style.display="flex"
+  if(loggedIn){
+    $("uinfo").style.display="flex";
+    $("authBtns").style.display="none";
+  } else {
+    $("uinfo").style.display="none";
+    $("authBtns").style.display="flex";
+  }
 }
-function editU(){var n=prompt("Ваше имя:",localStorage.getItem("fn")||"");
-  if(n!==null&&n.trim()){localStorage.setItem("fn",n.trim());updUI()}}
-function editP(){var n=prompt("Ваш телефон:",localStorage.getItem("fp")||"");
-  if(n!==null){localStorage.setItem("fp",n.trim());updUI()}}
+function editU(){
+  if(!loggedIn) return;
+  var n=prompt("Ваше имя:",localStorage.getItem("fn")||"");
+  if(n!==null&&n.trim()){
+    localStorage.setItem("fn",n.trim());
+    var key=myKey();
+    if(key&&db) db.ref("clients/"+key+"/name").set(n.trim());
+    updUI();
+  }
+}
 
 /* ===== Notifications ===== */
 function requestNotificationPermission() {
@@ -459,7 +606,7 @@ function showNotificationStatus(text, color) {
   statusDiv.style.fontSize = "12px";
   statusDiv.style.zIndex = "1000";
   document.body.appendChild(statusDiv);
-  setTimeout(() => statusDiv.remove(), 3000);
+  setTimeout(function(){statusDiv.remove()}, 3000);
 }
 function showBrowserNotification(title, body) {
   if (!("Notification" in window)) return;
@@ -468,13 +615,13 @@ function showBrowserNotification(title, body) {
       new Notification(title, { body: body, silent: true });
     } catch(e) { console.error(e); }
   } else if (Notification.permission !== "denied") {
-    Notification.requestPermission().then(perm => {
+    Notification.requestPermission().then(function(perm){
       if (perm === "granted") new Notification(title, { body: body, silent: true });
     });
   }
 }
 
-// Загрузка статуса прочитанных уведомлений для текущего пользователя (по имени+телефону)
+// Загрузка статуса прочитанных уведомлений (по ключу клиента)
 function loadUserReadStatus() {
   var ck=myKey();
   if(!ck || !db) return;
@@ -498,7 +645,7 @@ function markNotificationRead(notifId) {
   if(ck) db.ref("userReadNotifications/"+ck+"/"+notifId).set(true);
 }
 
-// Прослушивание новых глобальных уведомлений (adminNotifications)
+// Прослушивание глобальных уведомлений
 function listenAdminNotifications() {
   if(!db) return;
   db.ref("adminNotifications").orderByChild("timestamp").limitToLast(50).on("child_added", function(snap){
@@ -508,7 +655,7 @@ function listenAdminNotifications() {
     if(isNew) {
       showBrowserNotification("Новое уведомление", data.message);
     }
-    if(!alerts.some(a => a.id === notifId)){
+    if(!alerts.some(function(a){return a.id === notifId})){
       alerts.push({message: data.message, time: data.timestamp || Date.now(), id: notifId});
       $("bdot").style.display = "block";
     }
@@ -530,7 +677,7 @@ function sendNotificationToAll(){
     timestamp:firebase.database.ServerValue.TIMESTAMP,
     from:uid
   }, function(err){
-    if(err){sAl("Ошибка: "+err.message);}
+    if(err){handlePermissionError(err,"отправка уведомления");}
     else{clMo("mNotifyInput");sAl("Уведомление отправлено");}
   });
 }
@@ -539,10 +686,10 @@ function showNM(){
   var h="";
   if(!alerts.length) h='<div class="nc">Нет уведомлений</div>';
   else{
-    var sorted = [...alerts].sort((a,b)=> b.time - a.time);
+    var sorted = alerts.slice().sort(function(a,b){return b.time - a.time});
     for(var i=0;i<sorted.length;i++){
       var notif = sorted[i];
-      h+='<div class="ni" data-id="'+notif.id+'"><div class="nm">'+E(notif.message)+'</div><div class="nt">'+new Date(notif.time).toLocaleString("ru")+'</div>';
+      h+='<div class="ni" data-id="'+notif.id+'"><div><div class="nm">'+E(notif.message)+'</div><div class="nt">'+new Date(notif.time).toLocaleString("ru")+'</div></div>';
       if(isA){
         h+='<span class="ndel" onclick="deleteNotification(\''+notif.id+'\')">🗑️</span>';
       }
@@ -560,14 +707,14 @@ function showNM(){
 }
 function deleteNotification(notifId){
   if(!isA || !db) return;
-  db.ref("adminNotifications/"+notifId).remove().then(()=>{
-    alerts = alerts.filter(n=>n.id !== notifId);
+  db.ref("adminNotifications/"+notifId).remove().then(function(){
+    alerts = alerts.filter(function(n){return n.id !== notifId});
     showNM();
-  }).catch(e=>console.error(e));
+  }).catch(function(e){console.error(e)});
 }
 function aAl(msg, id){
   var finalId = id || "local_"+Date.now()+"_"+Math.random();
-  if(alerts.some(a=>a.id===finalId)) return;
+  if(alerts.some(function(a){return a.id===finalId})) return;
   alerts.push({message:msg, time:Date.now(), id:finalId});
   $("bdot").style.display="block";
 }
@@ -592,7 +739,7 @@ function bMo(y,m){
   var firstDay = new Date(y, m, 1);
   var lastDay = new Date(y, m+1, 0);
   var daysInMonth = lastDay.getDate();
-  var startWeekday = firstDay.getDay(); // 0 воскресенье
+  var startWeekday = firstDay.getDay();
   var offset = startWeekday === 0 ? 6 : startWeekday - 1;
   var h = '<div class="cb"><div class="ch">'+MN[m]+" "+y+'</div><table class="ctbl">';
   for(var i=0;i<7;i++) h+="<th>"+WDs[i]+"</th>";
@@ -688,7 +835,7 @@ function rSl(s,ds){
   var ck = myKey();
   var mi = ck && e[ck] ? true : false;
   var fu = ls.length >= s.max;
-  
+
   var wl = waitlist[sid] || {};
   var wlArr = [];
   for(var wu in wl){
@@ -698,7 +845,7 @@ function rSl(s,ds){
   }
   wlArr = sortByTime(wlArr);
   var inWaitlist = ck && wl[ck] ? true : false;
-  
+
   var h='<div class="sl"><div class="sll"><div class="st">'+E(s.time)+" — "+E(s.name)+"</div><div class='sn'>";
   if(ls.length){
     h+="👥 ";
@@ -724,7 +871,7 @@ function rSl(s,ds){
     h+=wlNames.join(", ")+"</span>";
   }
   h+='</div></div><div class="slr"><span class="ct">'+ls.length+"/"+s.max+"</span>";
-  if(uid){
+  if(loggedIn){
     if(mi){
       h+='<span style="color:var(--g);font-weight:500;margin-right:4px">Вы записаны</span>';
       h+='<button class="b br" data-a="ca" data-s="'+sid+'">✖</button>';
@@ -736,6 +883,12 @@ function rSl(s,ds){
     } else {
       h+='<button class="b b-blue" data-a="addWait" data-s="'+sid+'">Добавить в резерв</button>';
     }
+  } else if(uid){
+    if(!fu){
+      h+='<button class="b bg" data-a="sg" data-s="'+sid+'">Записаться</button>';
+    } else {
+      h+='<button class="b b-blue" data-a="addWait" data-s="'+sid+'">В резерв</button>';
+    }
   }
   h+="</div></div>";
   return h;
@@ -745,7 +898,7 @@ function showPhone(el){
   if(phone) alert("Телефон: "+phone);
 }
 
-// Проверка на наличие такого же имени (игнорируя регистр) для других клиентов
+// Проверка на наличие такого же имени для других клиентов
 function nameExistsForOtherUser(sid, name, currentKey) {
   var bookings = bk[sid] || {};
   for(var k in bookings){
@@ -901,7 +1054,7 @@ function svW(){
   db.ref("weekOverrides/"+k).set(toSave, function(e){
     if(e){
       console.error("Save error:",e);
-      sAl("Ошибка: "+e.message);
+      handlePermissionError(e,"сохранение расписания");
     } else {
       console.log("Saved OK:",k);
       wC[k] = edSch.map(function(d){return{day:d.day,dow:d.dow,cls:d.cls.slice()}});
@@ -933,36 +1086,22 @@ function clW(){
 
 /* ===== Booking & Waitlist ===== */
 function openSg(sid){
-  var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
-  if(fn&&fp&&uid&&db){
-    var ck=getClientKey(fn,fp);
-    if(bk[sid]&&bk[sid][ck]){sAl("Вы уже записаны!");return}
-    if(nameExistsForOtherUser(sid, fn, ck)){
-      sAl("Клиент с таким именем уже записан или в резерве на это занятие.");
-      return;
-    }
-    db.ref("bookings/"+sid+"/"+ck).set({name:fn,phone:fp,t:firebase.database.ServerValue.TIMESTAMP});
-    var el=document.querySelector('[data-s="'+sid+'"][data-a="sg"]');
-    if(el){var p=el.closest(".sl");if(p){p.classList.add("flash");setTimeout(function(){p.classList.remove("flash")},1200)}}
-  } else {
-    pS=sid;$("iN").value=fn||"";$("iP").value=fp||"";opMo("mS")
-  }
-}
-function doSg(){
-  var n=$("iN").value.trim(),p=$("iP").value.trim();
-  if(!n){sAl("Введите имя");return}
-  if(!p){sAl("Введите телефон");return}
-  if(!uid||!db){sAl("Подождите загрузки...");return}
-  if(!pS)return;
-  var ck=getClientKey(n,p);
-  if(bk[pS]&&bk[pS][ck]){sAl("Вы уже записаны!");clMo("mS");return}
-  if(nameExistsForOtherUser(pS, n, ck)){
-    sAl("Клиент с таким именем уже записан или в резерве на это занятие.");
-    clMo("mS");
+  if(!loggedIn){
+    sAl("Для записи необходимо войти в кабинет или зарегистрироваться");
     return;
   }
-  localStorage.setItem("fn",n);localStorage.setItem("fp",p);updUI();
-  db.ref("bookings/"+pS+"/"+ck).set({name:n,phone:p,t:firebase.database.ServerValue.TIMESTAMP});clMo("mS")
+  if(!db){sAl("Нет соединения с базой");return;}
+  var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
+  var ck=getClientKey(fp);
+  if(!ck){sAl("Ошибка идентификации");return;}
+  if(bk[sid]&&bk[sid][ck]){sAl("Вы уже записаны!");return;}
+  if(nameExistsForOtherUser(sid, fn, ck)){
+    sAl("Клиент с таким именем уже записан или в резерве на это занятие.");
+    return;
+  }
+  db.ref("bookings/"+sid+"/"+ck).set({name:fn,phone:fp,t:firebase.database.ServerValue.TIMESTAMP});
+  var el=document.querySelector('[data-s="'+sid+'"][data-a="sg"]');
+  if(el){var p=el.closest(".sl");if(p){p.classList.add("flash");setTimeout(function(){p.classList.remove("flash")},1200)}}
 }
 function doCa(sid){
   var ck=myKey();
@@ -974,11 +1113,15 @@ function doCa(sid){
   });
 }
 function addToWaitlist(sid){
-  if(!uid||!db)return;
+  if(!loggedIn){
+    sAl("Для записи в резерв необходимо войти или зарегистрироваться");
+    return;
+  }
+  if(!db)return;
   var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
-  if(!fn){sAl("Сначала укажите имя и фамилию");return;}
-  if(!fp){sAl("Сначала укажите телефон");return;}
-  var ck=getClientKey(fn,fp);
+  if(!fn||!fp){sAl("Ошибка: данные пользователя не найдены");return;}
+  var ck=getClientKey(fp);
+  if(!ck){sAl("Ошибка идентификации");return;}
   if(bk[sid] && bk[sid][ck]){sAl("Вы уже записаны на это занятие!");return;}
   if(nameExistsForOtherUser(sid, fn, ck)){
     sAl("Клиент с таким именем уже записан или в резерве на это занятие.");
@@ -1003,7 +1146,7 @@ function tryA(){
   if(!db){sAl("Нет подключения к базе");return;}
   if(c===ACODE){
     db.ref("admins/"+uid).set(true, function(err){
-      if(err) sAl("Ошибка: "+err.message);
+      if(err) handlePermissionError(err,"установка админа");
       else {
         clMo("mA");
         sAl("Вы вошли как администратор");
@@ -1148,11 +1291,12 @@ if(eBEl)eBEl.addEventListener("input",function(e){
     autoSave();
   }
 });
-["mS","mA","mE","mN","mD","mL","mNotifyInput"].forEach(function(id){
+["mLogin","mReg","mA","mE","mN","mD","mL","mNotifyInput"].forEach(function(id){
   $(id).addEventListener("click",function(e){if(e.target===this)clMo(id)})
 });
-$("iN").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
-$("iP").addEventListener("keydown",function(e){if(e.key==="Enter")doSg()});
+$("loginPin").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin()});
+$("loginPhone").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin()});
+$("regPin").addEventListener("keydown",function(e){if(e.key==="Enter")doRegister()});
 $("iC").addEventListener("keydown",function(e){if(e.key==="Enter")tryA()});
 
 document.addEventListener("visibilitychange", function() {
@@ -1169,11 +1313,17 @@ try{
   firebase.initializeApp(FC);
   var auth=firebase.auth(); db=firebase.database();
   console.log("Firebase init OK");
-  auth.signInAnonymously().catch(function(e){console.error("Auth err:",e);setSC("c-er","Ошибка")});
+  auth.signInAnonymously().catch(function(e){
+    console.error("Auth err:",e);
+    setSC("c-er","Ошибка авторизации");
+    if(e.code === "auth/operation-not-allowed"){
+      sAl("Анонимная авторизация отключена в Firebase.\n\nОткройте console.firebase.google.com → Authentication → Sign-in method → Anonymous и включите её.");
+    }
+  });
   auth.onAuthStateChanged(function(user){
     if(!user)return; uid=user.uid;
     console.log("User:",uid); setSC("c-ok","Онлайн"); $("iBtn").classList.add("sh");
-    loadUserReadStatus();
+    if(loggedIn) loadUserReadStatus();
     ldWk(tod,function(){render()});
     var nw=new Date(tod); nw.setDate(nw.getDate()+7);
     ldWk(nw,function(){render()});
