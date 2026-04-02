@@ -243,6 +243,20 @@ function gM(d){
 function wK(d){return Fd(gM(d))}
 function gid(){return "x"+Date.now()+"_"+Math.random().toString(36).substr(2,5)}
 
+/* ===== Client Key (идентификация по имени+телефону) ===== */
+function getClientKey(name, phone){
+  var n=(name||"").trim();
+  var p=(phone||"").trim();
+  var combined=n+"__"+p;
+  return combined.replace(/[.#$\[\]\/]/g,"_");
+}
+function myKey(){
+  var fn=localStorage.getItem("fn");
+  var fp=localStorage.getItem("fp");
+  if(!fn||!fp) return null;
+  return getClientKey(fn,fp);
+}
+
 var MN=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
 var WD=["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
 var WDs=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
@@ -327,7 +341,7 @@ function ldWk(d,cb){
     if(raw){
       nwS.add(k);
       wC[k]=parseWeek(raw);
-      console.log("Parsed week",k,":",wC[k])
+      console.log("Parsed week",k,":",wC[k]);
     } else {
       console.log("No override for",k);
       nwS.delete(k)
@@ -370,12 +384,13 @@ function hWk(k){
 }
 function hW(d){return hWk(wK(d))}
 function hB(ds){
-  if(!uid) return false;
+  var ck=myKey();
+  if(!ck) return false;
   var week=gWC(PD(ds));if(!week)return false;
   var day=gCD(week,ds);if(!day)return false;
   for(var i=0;i<day.cls.length;i++){
     var sid=day.cls[i].id+"_"+ds;
-    if(bk[sid]&&bk[sid][uid])return true
+    if(bk[sid]&&bk[sid][ck])return true
   }
   return false
 }
@@ -459,10 +474,11 @@ function showBrowserNotification(title, body) {
   }
 }
 
-// Загрузка статуса прочитанных уведомлений для текущего пользователя
+// Загрузка статуса прочитанных уведомлений для текущего пользователя (по имени+телефону)
 function loadUserReadStatus() {
-  if(!uid || !db) return;
-  db.ref("userReadNotifications/"+uid).once("value", function(snap){
+  var ck=myKey();
+  if(!ck || !db) return;
+  db.ref("userReadNotifications/"+ck).once("value", function(snap){
     var val = snap.val();
     userReadNotifications.clear();
     if(val){
@@ -474,11 +490,12 @@ function loadUserReadStatus() {
   });
 }
 function markNotificationRead(notifId) {
-  if(!uid || !db || !notifId) return;
+  var ck=myKey();
+  if(!db || !notifId) return;
   if(userReadNotifications.has(notifId)) return;
   userReadNotifications.add(notifId);
   localStorage.setItem("userReadNotifications", JSON.stringify(Array.from(userReadNotifications)));
-  db.ref("userReadNotifications/"+uid+"/"+notifId).set(true);
+  if(ck) db.ref("userReadNotifications/"+ck+"/"+notifId).set(true);
 }
 
 // Прослушивание новых глобальных уведомлений (adminNotifications)
@@ -668,7 +685,8 @@ function rSl(s,ds){
     }
   }
   ls = sortByTime(ls);
-  var mi = uid && e[uid] ? true : false;
+  var ck = myKey();
+  var mi = ck && e[ck] ? true : false;
   var fu = ls.length >= s.max;
   
   var wl = waitlist[sid] || {};
@@ -679,7 +697,7 @@ function rSl(s,ds){
     }
   }
   wlArr = sortByTime(wlArr);
-  var inWaitlist = uid && wl[uid] ? true : false;
+  var inWaitlist = ck && wl[ck] ? true : false;
   
   var h='<div class="sl"><div class="sll"><div class="st">'+E(s.time)+" — "+E(s.name)+"</div><div class='sn'>";
   if(ls.length){
@@ -727,18 +745,17 @@ function showPhone(el){
   if(phone) alert("Телефон: "+phone);
 }
 
-// Проверка на наличие такого же имени (игнорируя регистр) для других пользователей
-function nameExistsForOtherUser(sid, name, currentUid) {
-  if(!db) return false;
+// Проверка на наличие такого же имени (игнорируя регистр) для других клиентов
+function nameExistsForOtherUser(sid, name, currentKey) {
   var bookings = bk[sid] || {};
   for(var k in bookings){
-    if(k !== currentUid && bookings[k].name && bookings[k].name.toLowerCase().trim() === name.toLowerCase().trim()){
+    if(k !== currentKey && bookings[k].name && bookings[k].name.toLowerCase().trim() === name.toLowerCase().trim()){
       return true;
     }
   }
   var wl = waitlist[sid] || {};
   for(var w in wl){
-    if(w !== currentUid && wl[w].name && wl[w].name.toLowerCase().trim() === name.toLowerCase().trim()){
+    if(w !== currentKey && wl[w].name && wl[w].name.toLowerCase().trim() === name.toLowerCase().trim()){
       return true;
     }
   }
@@ -755,7 +772,7 @@ function promoteFromWaitlist(sid){
     var entries = [];
     for(var k in wl){
       if(wl.hasOwnProperty(k)){
-        entries.push({uid: k, data: wl[k]});
+        entries.push({key: k, data: wl[k]});
       }
     }
     if(entries.length === 0) return;
@@ -763,7 +780,7 @@ function promoteFromWaitlist(sid){
       return (a.data.t || 0) - (b.data.t || 0);
     });
     var first = entries[0];
-    var bookingRef = db.ref("bookings/"+sid+"/"+first.uid);
+    var bookingRef = db.ref("bookings/"+sid+"/"+first.key);
     bookingRef.set({
       name: first.data.name,
       phone: first.data.phone || "",
@@ -772,20 +789,21 @@ function promoteFromWaitlist(sid){
       if(err){
         console.error("Promote error:", err);
       } else {
-        wlRef.child(first.uid).remove();
-        sendPromotionNotification(first.uid, sid, first.data.name);
+        wlRef.child(first.key).remove();
+        sendPromotionNotification(first.key, sid, first.data.name);
       }
     });
   });
 }
-function sendPromotionNotification(userId, sid, userName){
+function sendPromotionNotification(userKey, sid, userName){
   if(!db) return;
   db.ref("adminNotifications").push({
     message: "Пользователь " + userName + " перемещён из резерва в основную запись!",
     timestamp: firebase.database.ServerValue.TIMESTAMP,
     from: "system"
   });
-  if(userId === uid){
+  var ck=myKey();
+  if(ck && userKey === ck){
     showBrowserNotification("Запись подтверждена", userName+", вы записаны на занятие!");
     aAl("Вы записаны на занятие из резерва!");
   }
@@ -914,155 +932,64 @@ function clW(){
 }
 
 /* ===== Booking & Waitlist ===== */
-
+function openSg(sid){
+  var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
+  if(fn&&fp&&uid&&db){
+    var ck=getClientKey(fn,fp);
+    if(bk[sid]&&bk[sid][ck]){sAl("Вы уже записаны!");return}
+    if(nameExistsForOtherUser(sid, fn, ck)){
+      sAl("Клиент с таким именем уже записан или в резерве на это занятие.");
+      return;
+    }
+    db.ref("bookings/"+sid+"/"+ck).set({name:fn,phone:fp,t:firebase.database.ServerValue.TIMESTAMP});
+    var el=document.querySelector('[data-s="'+sid+'"][data-a="sg"]');
+    if(el){var p=el.closest(".sl");if(p){p.classList.add("flash");setTimeout(function(){p.classList.remove("flash")},1200)}}
+  } else {
+    pS=sid;$("iN").value=fn||"";$("iP").value=fp||"";opMo("mS")
+  }
+}
+function doSg(){
+  var n=$("iN").value.trim(),p=$("iP").value.trim();
+  if(!n){sAl("Введите имя");return}
+  if(!p){sAl("Введите телефон");return}
+  if(!uid||!db){sAl("Подождите загрузки...");return}
+  if(!pS)return;
+  var ck=getClientKey(n,p);
+  if(bk[pS]&&bk[pS][ck]){sAl("Вы уже записаны!");clMo("mS");return}
+  if(nameExistsForOtherUser(pS, n, ck)){
+    sAl("Клиент с таким именем уже записан или в резерве на это занятие.");
+    clMo("mS");
+    return;
+  }
+  localStorage.setItem("fn",n);localStorage.setItem("fp",p);updUI();
+  db.ref("bookings/"+pS+"/"+ck).set({name:n,phone:p,t:firebase.database.ServerValue.TIMESTAMP});clMo("mS")
+}
 function doCa(sid){
-  if(!uid||!db) return;
+  var ck=myKey();
+  if(!ck||!db) return;
   sCo("Отменить запись на это занятие?", function(){
-    db.ref("bookings/"+sid+"/"+uid).remove(function(){
+    db.ref("bookings/"+sid+"/"+ck).remove(function(){
       promoteFromWaitlist(sid);
     });
   });
 }
-/* ===== SAFE BOOKING (ANTI‑DOUBLE) ===== */
-
-function openSg(sid){
-  if(!uid || !db){
-    sAl("Подождите загрузки...");
-    return;
-  }
-
-  var fn = localStorage.getItem("fn");
-  var fp = localStorage.getItem("fp") || "";
-
-  // если имя не заполнено — открыть окно
-  if(!fn){
-    pS = sid;
-    $("iN").value = "";
-    $("iP").value = "";
-    opMo("mS");
-    return;
-  }
-
-  safeBook(sid, fn, fp);
-}
-
-
-function doSg(){
-  var n = $("iN").value.trim();
-  var p = $("iP").value.trim();
-
-  if(!n){
-    sAl("Введите имя");
-    return;
-  }
-
-  if(!uid || !db){
-    sAl("Подождите загрузки...");
-    return;
-  }
-
-  if(!pS) return;
-
-  localStorage.setItem("fn", n);
-  localStorage.setItem("fp", p);
-  updUI();
-
-  safeBook(pS, n, p);
-  clMo("mS");
-}
-
-
-/* ===== Универсальная безопасная запись ===== */
-
-function safeBook(sid, name, phone){
-
-  var bookingRef = db.ref("bookings/"+sid+"/"+uid);
-  var waitRef = db.ref("waitlist/"+sid+"/"+uid);
-
-  // Проверяем — не в резерве ли уже
-  waitRef.once("value").then(function(waitSnap){
-
-    if(waitSnap.exists()){
-      sAl("Вы уже в резерве на это занятие!");
-      return;
-    }
-
-    // ТРАНЗАКЦИЯ — защита от двойной записи
-    bookingRef.transaction(function(currentData){
-      if(currentData === null){
-        return {
-          name: name,
-          phone: phone || "",
-          t: firebase.database.ServerValue.TIMESTAMP
-        };
-      }
-      return; // уже записан
-    }).then(function(result){
-
-      if(!result.committed){
-        sAl("Вы уже записаны на это занятие!");
-      }
-
-    }).catch(function(error){
-      console.error(error);
-      sAl("Ошибка записи");
-    });
-
-  });
-
-}
-
-
-/* ===== РЕЗЕРВ (SAFE) ===== */
-
 function addToWaitlist(sid){
-
-  if(!uid || !db) return;
-
-  var fn = localStorage.getItem("fn");
-  var fp = localStorage.getItem("fp") || "";
-
-  if(!fn){
-    sAl("Сначала укажите имя и фамилию");
+  if(!uid||!db)return;
+  var fn=localStorage.getItem("fn"),fp=localStorage.getItem("fp");
+  if(!fn){sAl("Сначала укажите имя и фамилию");return;}
+  if(!fp){sAl("Сначала укажите телефон");return;}
+  var ck=getClientKey(fn,fp);
+  if(bk[sid] && bk[sid][ck]){sAl("Вы уже записаны на это занятие!");return;}
+  if(nameExistsForOtherUser(sid, fn, ck)){
+    sAl("Клиент с таким именем уже записан или в резерве на это занятие.");
     return;
   }
-
-  var bookingRef = db.ref("bookings/"+sid+"/"+uid);
-  var waitRef = db.ref("waitlist/"+sid+"/"+uid);
-
-  bookingRef.once("value").then(function(bookSnap){
-
-    if(bookSnap.exists()){
-      sAl("Вы уже записаны в основной список!");
-      return;
-    }
-
-    waitRef.transaction(function(currentData){
-      if(currentData === null){
-        return {
-          name: fn,
-          phone: fp,
-          t: firebase.database.ServerValue.TIMESTAMP
-        };
-      }
-      return;
-    }).then(function(result){
-
-      if(!result.committed){
-        sAl("Вы уже в резерве!");
-      }
-
-    }).catch(function(error){
-      console.error(error);
-      sAl("Ошибка");
-    });
-
-  });
-
+  db.ref("waitlist/"+sid+"/"+ck).set({name:fn,phone:fp,t:firebase.database.ServerValue.TIMESTAMP});
 }
 function cancelWaitlist(sid){
-  if(!uid||!db)return;
-  sCo("Удалить из резерва?",function(){db.ref("waitlist/"+sid+"/"+uid).remove()});
+  var ck=myKey();
+  if(!ck||!db)return;
+  sCo("Удалить из резерва?",function(){db.ref("waitlist/"+sid+"/"+ck).remove()});
 }
 
 /* ===== Admin ===== */
@@ -1116,6 +1043,8 @@ function cNtf(){
   var ds=Fd(now);
   var week=gWC(now);
   if(!week) return;
+  var ck=myKey();
+  if(!ck) return;
   var ns=JSON.parse(localStorage.getItem("ns")||"{}");
   var tb=[];
   for(var di=0; di<week.length; di++){
@@ -1123,7 +1052,7 @@ function cNtf(){
       for(var ci=0; ci<week[di].cls.length; ci++){
         var s=week[di].cls[ci];
         var sid = s.id+"_"+ds;
-        if(bk[sid] && bk[sid][uid]) tb.push(s);
+        if(bk[sid] && bk[sid][ck]) tb.push(s);
       }
     }
   }
